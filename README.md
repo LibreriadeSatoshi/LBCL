@@ -1,2 +1,2 @@
 # LBCL
-Seminar and study group a bout Learning Bitcoin with the Command Line
+Seminar and study group about Learning Bitcoin with the Command Line
