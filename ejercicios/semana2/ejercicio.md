@@ -1,6 +1,7 @@
 # LBCL Cohort Ejercicio Semana 2
 
 ## Enunciado del Problema
+
 Ahora que tenemos un nodo de Bitcoin en funcionamiento, con una billetera conectada, en este ejercicio realizaremos algunos flujos de trabajo básicos de uso de billeteras de Bitcoin utilizando scripts de bash y la interfaz de línea de comandos `bitcoin-cli`. Nos enfocaremos en aumentar la tarifa utilizando los mecanismos de Replace-By-Fee (RBF) y Child-Pays-for-Parent (CPFP).
 
 A menudo, las billeteras necesitan aumentar las tarifas en momentos de altas tasas de tarifas. Hay dos formas de aumentar las tarifas, RBF y CPFP. Ambos utilizan mecanismos diferentes para aumentar la tarifa, pero no pueden usarse juntos. Intentar RBF una transacción invalidaría la CPFP, ya que la transacción secundaria no puede ser válida si su transacción principal se elimina del "mempool".
@@ -63,12 +64,20 @@ Escribe un script de bash para:
 12) Imprime una explicación en la terminal de lo que cambió en los dos resultados de `getmempoolentry` para las transacciones `child` y por qué.
 
 ## Entrega
+
 - Crea un script de bash con tu solución para todo el ejercicio.
 - Guarda el script en la carpeta de soluciones proporcionada con el nombre `<tu-nombre-en-Discord>.sh`
 - Crea una solicitud de pull para agregar el nuevo archivo a la carpeta de soluciones.
 - El script debe incluir todos los pasos del ejercicio, pero también puedes agregar mejoras o funcionalidades adicionales a tu script.
 
+**--Recursos**
 
+- Ejemplos útiles de scripts de bash: `https://linuxhint.com/30_bash_script_examples/`.
+- Más sobre la Descarga Inicial de Bloques: `https://bitcoin.org/en/full-node#initial-block-downloadibd`.
+- Ejemplos útiles de `jq`: `https://www.baeldung.com/linux/jq-command-json`.
+- Cómo crear una solicitud de colaboración en Github a través del navegador web: `https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request`.
+
+  
 =============================================================================================================================
 
 
