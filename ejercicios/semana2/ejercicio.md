@@ -70,7 +70,7 @@ Escribe un script de bash para:
 - Crea una solicitud de pull para agregar el nuevo archivo a la carpeta de soluciones.
 - El script debe incluir todos los pasos del ejercicio, pero también puedes agregar mejoras o funcionalidades adicionales a tu script.
 
-**--Recursos**
+## Recursos
 
 - Ejemplos útiles de scripts de bash: `https://linuxhint.com/30_bash_script_examples/`.
 - Más sobre la Descarga Inicial de Bloques: `https://bitcoin.org/en/full-node#initial-block-downloadibd`.
