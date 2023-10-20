@@ -1,3 +1,76 @@
+# Enunciado del Problema
+
+Los pasos iniciales de cualquier software de nodo automatizado (Umbrel, MyNode, Raspibltiz, etc.) consisten en descargar los binarios de Bitcoin, verificar las firmas, instalarlos en ubicaciones correctas, proporcionar acceso específico al usuario y luego iniciar el nodo.
+
+Luego, el nodo entrará en la fase de Descarga Inicial de Bloques (IBD, por sus siglas en inglés), donde descargará y validará todo el blockchain de Bitcoin. Una vez que se completa el IBD, iniciará una billetera y el usuario podrá comenzar a realizar transacciones de Bitcoin con el nodo (a través de la interfaz del nodo o conectando billeteras móviles al nodo).
+
+El siguiente ejercicio es una versión simplificada de este proceso a través de un script de bash.
+
+No será necesario realizar el IBD, ya que estaremos utilizando `regtest`, donde podemos crear nuestros propios bloques de juguete con transacciones de juguete.
+
+### Escribe un script de bash para:
+**--Configuración**
+
+- Descargar los binarios principales de Bitcoin desde el sitio web de Bitcoin Core https://bitcoincore.org/.
+- Utilizar los hashes y la firma descargados para verificar que los binarios sean correctos. Imprimir un mensaje en la terminal: "Verificación exitosa de la firma binaria".
+- Copiar los binarios descargados a la carpeta `/usr/local/bin/`.
+
+**--Iniciar**
+
+- Crear un archivo `bitcoin.conf` en el directorio de datos `/home/<nombre-de-usuario>/.bitcoin/`. Crear el directorio si no existe. Y agregar las siguientes líneas al archivo:
+
+```
+regtest=1
+fallbackfee=0.0001
+server=1
+txindex=1
+```
+- Iniciar `bitcoind`.
+- Crear dos billeteras llamadas `Miner` y `Trader`.
+- Generar una dirección desde la billetera `Miner` con una etiqueta "Recompensa de Minería".
+- Extraer nuevos bloques a esta dirección hasta obtener un saldo de billetera positivo. (utilizar `generatetoaddress`) (cuántos bloques se necesitaron para obtener un saldo positivo)
+- Escribir un breve comentario que describa por qué el saldo de la billetera para las recompensas en bloque se comporta de esa manera.
+- Imprimir el saldo de la billetera `Miner`.
+  
+**--Uso**
+
+- Crear una dirección receptora con la etiqueta "Recibido" desde la billetera `Trader`.
+- Enviar una transacción que pague 20 BTC desde la billetera `Miner` a la billetera del `Trader`.
+- Obtener la transacción no confirmada desde el "mempool" del nodo y mostrar el resultado. (pista: `bitcoin-cli help` para encontrar la lista de todos los comandos, busca `getmempoolentry`).
+- Confirmar la transacción creando 1 bloque adicional.
+- Obtener los siguientes detalles de la transacción y mostrarlos en la terminal:
+
+`txid:` `<ID de la transacción>`
+`<De, Cantidad>`: `<Dirección del Miner>`, `Cantidad de entrada.`
+`<Enviar, Cantidad>`: `<Dirección del Trader>`, `Cantidad enviada.`
+`<Cambio, Cantidad>`: `<Dirección del Miner>`, `Cantidad de cambio.`
+`Comisiones`: `Cantidad pagada en comisiones.`
+`Bloque`: `Altura del bloque en el que se confirmó la transacción.`
+`Saldo de Miner`: `Saldo de la billetera Miner después de la transacción.`
+`Saldo de Trader`: `Saldo de la billetera Trader después de la transacción.`
+
+**--Sugerencias**
+
+- Para descargar los binarios más recientes para Linux x86-64 a través de la línea de comandos: `wget https://bitcoincore.org/bin/bitcoin-core-25.0/bitcoin-25.0-x86_64-linux-gnu.tar.gz`.
+- Busca en Google comandos de terminal para una tarea específica si no los tienes a mano. Ejemplo: "cómo extraer una carpeta zip a través de la terminal de Linux", "cómo copiar archivos a otro directorio a través de la terminal de Linux", etc.
+- Utiliza la herramienta `jq` para obtener datos específicos de objetos JSON devueltos por `bitcoin-cli`.
+
+**--Envío**
+
+La carpeta de soluciones de esta semana se encuentra aquí: carpeta de soluciones.
+Crea una solicitud de extracción para agregar un nuevo archivo a la carpeta con el nombre <tu-nombre-en-Discord>.sh.
+Este archivo debe contener tu script de bash que resuelve todo el ejercicio.
+Es obligatorio que se reflejen los pasos del ejercicio, pero siéntete libre de agregar tus propias características de scripting.
+
+**--Recursos**
+
+- Ejemplos útiles de scripts de bash: `https://linuxhint.com/30_bash_script_examples/`.
+- Más sobre la Descarga Inicial de Bloques: `https://bitcoin.org/en/full-node#initial-block-downloadibd`.
+- Ejemplos útiles de `jq`: `https://www.baeldung.com/linux/jq-command-json`.
+- Cómo crear una solicitud de colaboración en Github a través del navegador web: `https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request`.
+
+===================================================================================================================================================================================
+
 # Problem Statement
 
 The starting steps of any automated node software (Umbrel, MyNode, Raspibltiz etc) is to download the bitcoin binaries, verify signatures, install them in correct locations, provide specific user access, and then start the node.
