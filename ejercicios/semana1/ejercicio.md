@@ -55,7 +55,7 @@ txindex=1
 - Busca en Google comandos de terminal para una tarea específica si no los tienes a mano. Ejemplo: "cómo extraer una carpeta zip a través de la terminal de Linux", "cómo copiar archivos a otro directorio a través de la terminal de Linux", etc.
 - Utiliza la herramienta `jq` para obtener datos específicos de objetos JSON devueltos por `bitcoin-cli`.
 
-**--Envío**
+**--Entrega**
 
 La carpeta de soluciones de esta semana se encuentra aquí: carpeta de soluciones.
 Crea una solicitud de extracción para agregar un nuevo archivo a la carpeta con el nombre <tu-nombre-en-Discord>.sh.
