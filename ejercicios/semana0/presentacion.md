@@ -32,7 +32,7 @@ apt-get install -y bc jq autoconf file gcc libc-dev make g++ pkgconf re2c git li
 ```
 # Presentar primera práctica
 
-Veámos nuestro [primer ejercicio](ejercicios/semana1/ejercicio.md)
+Veámos nuestro [primer ejercicio](../semana1/ejercicio.md)
 
 ## Dudas preguntas
 
