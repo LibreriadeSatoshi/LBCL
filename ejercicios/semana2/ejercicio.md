@@ -1,6 +1,4 @@
-# LBCL Cohort Ejercicio Semana 2
-
-## Enunciado del Problema
+# Enunciado del Problema
 
 Ahora que tenemos un nodo de Bitcoin en funcionamiento, con una billetera conectada, en este ejercicio realizaremos algunos flujos de trabajo básicos de uso de billeteras de Bitcoin utilizando scripts de bash y la interfaz de línea de comandos `bitcoin-cli`. Nos enfocaremos en aumentar la tarifa utilizando los mecanismos de Replace-By-Fee (RBF) y Child-Pays-for-Parent (CPFP).
 
@@ -8,20 +6,18 @@ A menudo, las billeteras necesitan aumentar las tarifas en momentos de altas tas
 
 El siguiente ejercicio intenta demostrar esa situación.
 
-## Tarea
-
-Escribe un script de bash para:
+## Escribe un script de bash para:
 
 1) Crear dos billeteras llamadas `Miner` y `Trader`.
 2) Fondear la billetera `Miner` con al menos el equivalente a 3 recompensas en bloque en satoshis (Saldo inicial: 150 BTC).
-3) Crear una transacción desde `Miner` a `Trader` con la siguiente estructura (llamémosla la `parent`):
+3) Crear una transacción desde `Miner` a `Trader` con la siguiente estructura (llamémosla la transacción `parent`):
 	- Entrada[0]: Recompensa en bloque de 50 BTC.
 	- Entrada[1]: Recompensa en bloque de 50 BTC.
 	- Salida[0]: 70 BTC para `Trader`.
 	- Salida[1]: 29.99999 BTC de cambio para `Miner`.
 	- **Activar RBF** (Habilitar RBF para la transacción).
-4) Firmar y transmitir la `parent`, pero no la confirmes aún.
-5) Realizar consultas al "mempool" del nodo para obtener los detalles de la `parent`. Utiliza los detalles para crear una variable JSON con la siguiente estructura:
+4) Firmar y transmitir la transacción `parent`, pero no la confirmes aún.
+5) Realizar consultas al "mempool" del nodo para obtener los detalles de la transacción `parent`. Utiliza los detalles para crear una variable JSON con la siguiente estructura:
 
 ```json
 {
@@ -64,14 +60,12 @@ Escribe un script de bash para:
 12) Imprime una explicación en la terminal de lo que cambió en los dos resultados de `getmempoolentry` para las transacciones `child` y por qué.
 
 ## Entrega
-
 - Crea un script de bash con tu solución para todo el ejercicio.
 - Guarda el script en la carpeta de soluciones proporcionada con el nombre `<tu-nombre-en-Discord>.sh`
 - Crea una solicitud de pull para agregar el nuevo archivo a la carpeta de soluciones.
 - El script debe incluir todos los pasos del ejercicio, pero también puedes agregar mejoras o funcionalidades adicionales a tu script.
 
 ## Recursos
-
 - Ejemplos útiles de scripts de bash: [https://linuxhint.com/30_bash_script_examples/](https://linuxhint.com/30_bash_script_examples/)
 - Más sobre la Descarga Inicial de Bloques: [https://www.baeldung.com/linux/jq-command-json](https://www.baeldung.com/linux/jq-command-json)
 - Ejemplos útiles de `jq`:  [https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/](https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/)
@@ -80,20 +74,14 @@ Escribe un script de bash para:
   
 =============================================================================================================================
 
-
-# LBCL Cohort Exercise Week 2
-
-## Problem Statement
+# Problem Statement
 Now that we have a running Bitcoin node, with a wallet connected, in this exercise, we will perform some basic Bitcoin wallet usage workflows using bash scripting and the `bitcoin-cli` command-line interface. We will focus on fee bumping using Replace-By-Fee (RBF) and Child-Pays-for-Parent (CPFP) mechanisms.
 
 Wallets often need to fee-bump transactions in times of high fee-rate markets. There are two ways of fee bumping, RBF and CPFP. They both use different mechanisms for bumping the fee, but they cannot be used together. Trying to RBF a transaction would invalidate the CPFP, because the child transaction cannot be valid if its parent is removed from the mempool.
 
 The following exercise attempts to demo that situation.
 
-## Task
-
-Write a bash script to:
-
+## Write a bash script to:
 1. Create two wallets named `Miner` and `Trader`.
 2. Fund the `Miner` wallet with at least 3 block rewards worth of satoshis (Starting balance: 150 BTC).
 3. Craft a transaction from `Miner` to `Trader` with the following structure (let's call it the `Parent` transaction):
@@ -131,10 +119,9 @@ Write a bash script to:
   "Weight": "<num>" (weight of the tx in vbytes)
 }
 ```
-
-- Use `bitcoin-cli help` to get all the category-specific commands (wallet, mempool, chain, etc.).
-- Use `bitcoin-cli help <command-name>` to get usage information of specific commands.
-- Use `jq` to fetch data from `bitcoin-cli` output into bash variables and use `jq` again to craft your JSON from the variables.
+   - Use `bitcoin-cli help` to get all the category-specific commands (wallet, mempool, chain, etc.).
+   - Use `bitcoin-cli help <command-name>` to get usage information of specific commands.
+   - Use `jq` to fetch data from `bitcoin-cli` output into bash variables and use `jq` again to craft your JSON from the variables.
 - You might have to make multiple CLI calls to get all the details.
 
 6. Print the above JSON in the terminal.
@@ -149,14 +136,12 @@ Write a bash script to:
 12. Print an explanation in the terminal of what changed in the two `getmempoolentry` results for the `Child` transactions, and why?
 
 ## Submission
-
 - Create a bash script with your solution for the entire exercise.
 - Save the script in the provided solution folder with the name `<your-discord-name>.sh`.
 - Create a pull request to add the new file to the solution folder.
 - The script must include all the exercise steps, but you can also add your own scripting improvements or enhancements.
 
 ## Resources
-
 - Useful bash script examples: [https://linuxhint.com/30_bash_script_examples/](https://linuxhint.com/30_bash_script_examples/)
 - Useful `jq` examples: [https://www.baeldung.com/linux/jq-command-json](https://www.baeldung.com/linux/jq-command-json)
 - Use `jq` to create JSON: [https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/](https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/)
