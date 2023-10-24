@@ -66,11 +66,10 @@ El siguiente ejercicio intenta demostrar esa situación.
 - El script debe incluir todos los pasos del ejercicio, pero también puedes agregar mejoras o funcionalidades adicionales a tu script.
 
 ## Recursos
-- Ejemplos útiles de scripts de bash: [https://linuxhint.com/30_bash_script_examples/](https://linuxhint.com/30_bash_script_examples/)
-- Más sobre la Descarga Inicial de Bloques: [https://www.baeldung.com/linux/jq-command-json](https://www.baeldung.com/linux/jq-command-json)
-- Ejemplos útiles de `jq`:  [https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/](https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/)
-- Cómo crear una solicitud de colaboración en Github a través del navegador web: [https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
-
+- Ejemplos útiles de scripts de bash: https://linuxhint.com/30_bash_script_examples/
+- Ejemplos útiles de uso de jq: https://www.baeldung.com/linux/jq-command-json
+- Usar jq para crear JSON: https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/
+- Cómo crear una solicitud de extracción a través de un navegador web: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
   
 =============================================================================================================================
 
