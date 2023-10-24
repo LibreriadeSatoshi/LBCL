@@ -19,7 +19,7 @@ Para comenzar, preséntate en el Discord de La Librería de Satoshi (canal #LBCL
 
 Cada semana debes asistir a una discusión grupal de 90 minutos los martes o miércoles y completar un ejercicio antes del domingo. Los sábados tendremos talleres o soporte a los alumnos con los ejercicios.
 
-**--Modalidad:**
+## Modalidad:
 a. Los primeros 60 minutos de la sesión de estudio se pasan en tu grupo de estudio asignado.
 b. Los últimos 30 minutos de la sesión de estudio son una conclusión con todos los participantes del cohorte.
 c. Basado en el autoestudio y la discusión grupal, se espera que completes el ejercicio antes del domingo.
@@ -32,12 +32,12 @@ Recibirás el grupo, las preguntas y el ejercicio 1 semana antes de la discusió
 
 Para suavizar las interacciones, a uno de los miembros del grupo se le asigna el papel de facilitador  (🤠).
 
-**--¿Qué es un facilitador🤠?**
+## ¿Qué es un facilitador🤠?
 Cada semana, los facilitadores (🤠) son seleccionados al azar. La idea no es añadir presión, simplemente se elige a una persona para ordenar las discusiones, suavizar las interacciones y mantener a todos concentrados y focalizados en los temas del día.
 
 Una semana antes de la reunión, se publican las asignaciones de facilitadores (🤠) junto con los grupos y pares de discusión. Cada grupo tiene su propio enlace de Zoom y consta de 4 a 5 participantes.
 
-**--El día de la reunión:**
+## El día de la reunión:
 
 Puedes ayudar a los compañeros de grupo a unirse a la sala de reuniones adecuada.
 Asegúrate de que todos se presenten antes de comenzar.
@@ -50,7 +50,7 @@ Si necesitas ayuda, no dudes en enviar un mensaje a uno de los miembros del equi
 
 En caso de que tu grupo no haya regresado a la sala principal, luego de los 60 minutos de discusión, te avisaremos por Discord para que animes a tu grupo a regresar a la sala principal de Zoom. ¡Entonces tu trabajo habrá terminado!
 
-**--¡Diviértete!**
+#### ¡Diviértete!
 
 ## Clases prácticas
 Introducción a las [sesiones prácticas](ejercicios/semana0/presentacion.md)
