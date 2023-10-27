@@ -37,15 +37,14 @@ txindex=1
 3. Obtener la transacción no confirmada desde el "mempool" del nodo y mostrar el resultado. (pista: `bitcoin-cli help` para encontrar la lista de todos los comandos, busca `getmempoolentry`).
 4. Confirmar la transacción creando 1 bloque adicional.
 5. Obtener los siguientes detalles de la transacción y mostrarlos en la terminal:
-
-`txid:` `<ID de la transacción>`
-`<De, Cantidad>`: `<Dirección del Miner>`, `Cantidad de entrada.`
-`<Enviar, Cantidad>`: `<Dirección del Trader>`, `Cantidad enviada.`
-`<Cambio, Cantidad>`: `<Dirección del Miner>`, `Cantidad de cambio.`
-`Comisiones`: `Cantidad pagada en comisiones.`
-`Bloque`: `Altura del bloque en el que se confirmó la transacción.`
-`Saldo de Miner`: `Saldo de la billetera Miner después de la transacción.`
-`Saldo de Trader`: `Saldo de la billetera Trader después de la transacción.`
+  - `txid:` `<ID de la transacción>`
+  - `<De, Cantidad>`: `<Dirección del Miner>`, `Cantidad de entrada.`
+  - `<Enviar, Cantidad>`: `<Dirección del Trader>`, `Cantidad enviada.`
+  - `<Cambio, Cantidad>`: `<Dirección del Miner>`, `Cantidad de cambio.`
+  - `Comisiones`: `Cantidad pagada en comisiones.`
+  - `Bloque`: `Altura del bloque en el que se confirmó la transacción.`
+  - `Saldo de Miner`: `Saldo de la billetera Miner después de la transacción.`
+  - `Saldo de Trader`: `Saldo de la billetera Trader después de la transacción.`
 
 ## Sugerencias
 - Para descargar los binarios más recientes para Linux x86-64 a través de la línea de comandos: `wget https://bitcoincore.org/bin/bitcoin-core-25.0/bitcoin-25.0-x86_64-linux-gnu.tar.gz`.
