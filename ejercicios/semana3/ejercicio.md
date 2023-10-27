@@ -1,5 +1,5 @@
 
-# Enuciado del Problema
+# Enunciado del Problema
 
 Las transacciones multisig son un aspecto fundamental de la "criptografía Bitcoin compleja" que permite la copropiedad de UTXOs de Bitcoin. Juegan un papel crucial en las soluciones de custodia conjunta para los protocolos de la Capa 2 (L2).
 
