@@ -29,6 +29,7 @@ La planificación de las clases prácticas será la siguiente:
 * Semana2: Experimentar con los mecanismos Replace-By-Fee (RBF) y Child-Pays-for-Parent (CPFP)
 * Semana3: Transacciones multisig, como bloquear utxo en una multifirma y como posteriormente gastar los fondos.
 * Semana4: Creación de transacciones con Timelocks
+
 Si alguien acaba la práctica semanal y desea profundizar más, tengo en mente una serie de ejercicios adicionales.
 
 ## Funcionamiento
@@ -42,6 +43,8 @@ Disponer de un entorno de trabajo lo más estándard posible. La recomendación 
 ```
 apt-get install -y bc jq autoconf file gcc libc-dev make g++ pkgconf re2c git libtool automake gcc xxd
 ```
+
+Propuesta: [Ubuntu 22.04 Jammy Jellyfish VM](https://www.osboxes.org/ubuntu/) sobre [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 ## Conoce tu nodo
 Esa es nuestra principal misión durante el curso. Bitcoin-core tiene dos piezas básicas que serán el objetivo del curso:
