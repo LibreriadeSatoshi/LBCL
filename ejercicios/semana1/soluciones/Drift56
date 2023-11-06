@@ -1,0 +1,70 @@
+#!/bin/bash
+
+wget https://bitcoincore.org/bin/bitcoin-core-25.1/bitcoin-25.1-x86_64-linux-gnu.tar.gz
+wget https://bitcoincore.org/bin/bitcoin-core-25.1/SHA256SUMS
+wget https://bitcoincore.org/bin/bitcoin-core-25.1/SHA256SUMS.asc
+checkSum=$(sha256sum --ignore-missing --check SHA256SUMS)
+
+if [ "$checkSum" = "bitcoin-25.1-x86_64-linux-gnu.tar.gz: OK" ]; then
+    echo "¡La suma hash es válida! Confirmación exitosa."
+else
+    echo "La suma hash no coincide. No se pudo confirmar la integridad del archivo."
+    exit
+fi
+
+#Se descargan las firmas
+git clone https://github.com/bitcoin-core/guix.sigs.git
+#Se importan las firmas
+gpg --import guix.sigs/builder-keys/*
+#Se validan las firmas
+gpg --verify SHA256SUMS.asc
+#Se extraen los binarios
+
+ tar -xvf bitcoin-25.1-x86_64-linux-gnu.tar.gz -C /usr/local/bin/
+
+#Creamos el directorio bitcoin y el archivo bitcoin.cof con su configuracion
+bitcoin_data_dir="/home/$USER/.bitcoin"
+conf_file="$bitcoin_data_dir/bitcoin.conf"
+conf_content="regtest=1
+fallbackfee=0.0001
+server=1
+txindex=1"
+
+# Escribir el contenido en el archivo
+echo "$conf_content" > "$conf_file"
+
+export PATH="$PATH:/usr/local/bin/bitcoin-25.1/bin"
+bitcoind -daemon
+bitcoin-cli -named createwallet wallet_name="Miner" descriptors=true
+bitcoin-cli -named createwallet wallet_name="Trader" descriptors=true
+Reward=bitcoin-cli -rpcwallet=Miner getnewaddress "Recompensa de Minería"
+echo "Minero: " $Reward
+while [ $(echo "$(bitcoin-cli -rpcwallet=Miner getbalance) == 0" | bc -l) -eq 1 ]; do
+    bitcoin-cli generatetoaddress 1 "$Reward"
+done
+echo "Saldo del minero: " $(bitcoin-cli -rpcwallet=Miner getbalance)
+WalletReceive=$(bitcoin-cli -rpcwallet=Trader getnewaddress "Recibido")
+echo "Trader: " $WalletReceive
+tx=bitcoin-cli -rpcwallet=Miner sendtoaddress "$WalletReceive" 20
+echo "Tx: "$tx
+echo "memmpool tx:"
+bitcoin-cli getmempoolentry $tx
+bitcoin-cli generatetoaddress 1 "$Reward"
+echo "txid: "$tx
+transactionRaw=$(bitcoin-cli -rpcwallet=Trader getrawtransaction "$tx" 1)
+echo $transactionRaw
+#Se busca e imprime la informacion del ejercicio
+txidUtxo=$(echo "$transactionRaw" | jq -r '.vin[0].txid')
+Utxo=$(bitcoin-cli -rpcwallet=Trader getrawtransaction "$txidUtxo" 1)
+Balanceutxo=$(echo "$Utxo" | jq -r '.vout[0].value')
+BalanceSend=$(echo "$transactionRaw" | jq -r '.vout[0].value')
+BalanceChange=$(echo "$transactionRaw" | jq -r '.vout[1].value')
+fee=$(echo "$Balanceutxo - $BalanceSend - $BalanceChange" | bc)
+echo "txid: " $tx
+echo "<De,Cantidad>: <" $Reward "," $Balanceutxo ">"
+echo "<Enviar,Cantidad>: <" $WalletReceive "," $BalanceSend ">"
+echo "<Cambio,Cantidad>: <" $Reward "," $BalanceChange ">"
+echo "Comisiones: " $fee
+echo "Bloque: " $(bitcoin-cli -rpcwallet=Trader gettransaction "$tx" | jq -r '.blockheight')
+echo "Saldo del minero: " $(bitcoin-cli -rpcwallet=Miner getbalance)
+echo "Saldo del trader: " $(bitcoin-cli -rpcwallet=Trader getbalance)
