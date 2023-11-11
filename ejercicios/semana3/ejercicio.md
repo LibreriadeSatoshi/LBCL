@@ -10,7 +10,7 @@ En este ejercicio, nuestro objetivo es simular una transferencia básica de acci
 ## Escribe un script de bash para:
 
 #### Configurar Multisig
-1. Crear tres monederos: `Miner`, `Alice` y `Bob`.
+1. Crear tres monederos: `Miner`, `Alice` y `Bob`. Es importante usar billeteras del tipo *legacy*, ya que sino lo hacemos nos encontraremos con problemas al usar la opción de bitcoin-cli addmultisigaddress.
 2. Fondear los monederos generando algunos bloques para `Miner` y enviando algunas monedas a `Alice` y `Bob`.
 3. Crear una dirección Multisig 2-de-2 combinando las claves públicas de `Alice` y `Bob`.
 4. Crear una Transacción Bitcoin Parcialmente Firmada (PSBT) para financiar la dirección multisig con 20 BTC, tomando 10 BTC de Alice y 10 BTC de Bob, y proporcionando el cambio correcto a cada uno de ellos.
