@@ -133,13 +133,14 @@ find_first_utxos() {
 # compose_rbf_transaction - Crea una transacción RBF con los datos recibidos.
 #
 # Compone una transacción con RBF habilitado, conteniendo todos los UTXOs recibidos.
+# Opcionalmente, devuelve a una dirección de cambio la cantidad indicada.
 #
 # Parámetros:
 #   $1 - JSON con los UTXOs a incluir.
 #   $2 - Dirección de destino.
 #   $3 - Importe a enviar.
-#   $4 - Dirección de cambio.
-#   $5 - Importe a devolver.
+#   $4 - Dirección de cambio (opcional).
+#   $5 - Importe a devolver (opcional).
 compose_rbf_transaction() {
 
     local utxos=$1
@@ -149,12 +150,50 @@ compose_rbf_transaction() {
     local change_amount=$5
 
     local inputs=$(echo $utxos | jq 'map({ txid: .txid, vout: .vout, sequence: 1 })')
-    local outputs='''
-        { 
-            "'$destination_address'": '$amount', 
-            "'$change_address'": '$change_amount' 
-        }
-    '''
+    local outputs='''{ "'$destination_address'": '$amount' }'''
+
+    if [[ -n "$change_address" && -n "$change_amount" ]]
+    then
+        outputs=$(echo $outputs | jq '. + { "'$change_address'": '$change_amount' }')
+    fi
+
+    local tx_raw=$(bitcoin-cli -named createrawtransaction inputs="$inputs" outputs="$outputs")
+
+    if [ ! -z "$tx_raw" ]
+    then
+        echo "$tx_raw"
+    else
+        (>&2 echo "Error. No se ha podido componer la transacción solicitada")
+        kill -s TERM $$
+    fi
+}
+
+# compose_transaction - Crea una transacción (no RBF) con los datos recibidos.
+#
+# Compone una transacción conteniendo todos los UTXOs recibidos.
+# Opcionalmente, devuelve a una dirección de cambio la cantidad indicada.
+#
+# Parámetros:
+#   $1 - JSON con los UTXOs a incluir.
+#   $2 - Dirección de destino.
+#   $3 - Importe a enviar.
+#   $4 - Dirección de cambio (opcional).
+#   $5 - Importe a devolver (opcional).
+compose_transaction() {
+
+    local utxos=$1
+    local destination_address=$2
+    local amount=$3
+    local change_address=$4
+    local change_amount=$5
+
+    local inputs=$(echo $utxos | jq 'map({ txid: .txid, vout: .vout })')
+    local outputs='''{ "'$destination_address'": '$amount' }'''
+
+    if [[ -n "$change_address" && -n "$change_amount" ]]
+    then
+        outputs=$(echo $outputs | jq '. + { "'$change_address'": '$change_amount' }')
+    fi
 
     local tx_raw=$(bitcoin-cli -named createrawtransaction inputs="$inputs" outputs="$outputs")
 
@@ -199,55 +238,89 @@ sign_and_send_transaction() {
     fi
 }
 
+# calculate_transaction_fee - Calcula la comisión de una transacción.
+#
+# Busca las transacciones de los vin de la transacción indicada y obtiene los
+# importes de sus vout, sumándolos. Seguidamente resta los importes de los vouts
+# de la transacción indicada para obtener la comisión.
+#
+# Parámetros:
+#   $1 - Transacción de interés (formato JSON).
+calculate_transaction_fee() {
+
+    local tx=$1
+
+    local vins_count=$(echo $tx | jq '.vin | length')
+
+    local vin_idx
+    local total_in=$(for (( vin_idx=0; vin_idx<$vins_count; vin_idx++ ))
+    do
+        local vin_txid=$(echo $tx | jq -r '.vin['$vin_idx'].txid')
+        local vin_vout=$(echo $tx | jq -r '.vin['$vin_idx'].vout')
+
+        local vin_tx=$(bitcoin-cli getrawtransaction "$vin_txid" 3)
+        local vin_tx_vout=$(echo $vin_tx | jq '.vout['$vin_vout']')
+        local vin_tx_vout_amount=$(echo $vin_tx_vout | jq -r '.value')
+
+        echo $vin_tx_vout_amount
+    done | awk '{s+=$1} END {print s}')
+
+    local total_out=$(echo $tx | jq '[ .vout[] | .value ] | add')
+
+    LC_ALL=C awk "BEGIN{printf \"%.8f\n\", $total_in - $total_out}"
+}
+
+# show_transaction_details - Muestra los detalles de una transacción.
+#
+# Muestra los detalles de la transacción indicada en el formato pedido por
+# el ejercicio.
+#
+# Parámetros:
+#   $1 - Hash de la transacción a mostrar.
 show_transaction_details() {
 
     local tx_hash=$1
 
     local tx=$(bitcoin-cli getrawtransaction "$tx_hash" 3)
+    local tx_fee=$(calculate_transaction_fee "$tx")
+
     local transformed_tx=$(echo $tx | jq '{
         input: .vin | map({txid: .txid, vout: .vout}),
         output: .vout | map({amount: .value, script_pubkey: .scriptPubKey.hex}),
         Fees: "'$tx_fee'",
-        Weight: "'$tx_weight'"
+        Weight: .weight | tostring
     }')
+
+    echo $transformed_tx | jq
 }
 
-show_mempool_transactions_details() {
 
-    local txs_hashes=$(bitcoin-cli getrawmempool)
-
-    if [ -z "$txs_hashes" ]
-    then
-        (>&2 echo "Error. No se ha podido obtener el contenido de la mempool")
-        kill -s TERM $$
-    fi
-
-    local txs_count=$(echo $txs_hashes | jq 'length')
-    echo "La mempool contiene $txs_count transacciones"
-
-    local tx_idx
-    for (( tx_idx=0; tx_idx<$txs_count; tx_idx++ ))
-    do
-        echo ""
-        echo "Transacción $(($tx_idx + 1)):"
-
-        local tx_hash=$(echo $txs_hashes | jq -r '.['$tx_idx']')
-        show_transaction_details "$tx_hash"
-    done
-}
-
+echo '''
+***************
+* Ejercicio 1 *
+***************
+'''
 echo "Creando cartera 'Miner'"
 create_wallet "Miner"
 echo "Creando cartera 'Trader'"
 create_wallet "Trader"
 
-echo ""
+echo '''
+***************
+* Ejercicio 2 *
+***************
+'''
 echo "Creando dirección para recompensa de minado en la cartera 'Miner'"
 miner_address=$(create_address "Miner" "Recompensa de Minería")
 echo "Creada dirección: '$miner_address'"
 
 mine_until_balance_equals "Miner" "$miner_address" "150"
 
+echo '''
+***************
+* Ejercicio 3 *
+***************
+'''
 echo "Creando dirección para recepción de bitcoins en la cartera 'Trader'"
 trader_address=$(create_address "Trader" "Recibido")
 echo "Creada dirección: '$trader_address'"
@@ -259,12 +332,95 @@ echo "Creada dirección: '$miner_change_address'"
 
 echo ""
 echo "Componiendo la transacción 'parent' con los 2 primeros UTXOs de 'Miner' y una comisión muy baja"
-utxos=$(find_first_utxos "Miner" "2")
+parent_utxos=$(find_first_utxos "Miner" "2")
 amount="70"
 change_amount="29.99999"
-parent_tx=$(compose_rbf_transaction "$utxos" "$trader_address" "$amount" "$miner_change_address" "$change_amount")
+parent_tx=$(compose_rbf_transaction "$parent_utxos" "$trader_address" "$amount" "$miner_change_address" "$change_amount")
 
+echo '''
+***************
+* Ejercicio 4 *
+***************
+'''
 echo "Firmando la transacción y enviándola"
 parent_tx_hash=$(sign_and_send_transaction "Miner" "$parent_tx")
 
-show_mempool_transactions_details
+echo '''
+********************
+* Ejercicios 5 y 6 *
+********************
+'''
+echo "Mostrando el detalle solicitado de la transacción emitida:"
+show_transaction_details "$parent_tx_hash"
+
+echo '''
+***************
+* Ejercicio 7 *
+***************
+'''
+echo "Creando dirección para autoenvío para CPFP en la cartera 'Miner'"
+miner_cpfp_address=$(create_address "Miner" "Autoenvío para RBF")
+echo "Creada dirección: '$miner_cpfp_address'"
+
+echo ""
+echo "Componiendo la transacción 'child' gastando la salida de la transacción 'parent'"
+child_utxos='''[ { "txid": "'$parent_tx_hash'", "vout": 1 } ]'''
+amount="29.99998"
+child_tx=$(compose_transaction "$child_utxos" "$miner_cpfp_address" "$amount")
+
+echo "Firmando la transacción y enviándola"
+child_tx_hash=$(sign_and_send_transaction "Miner" "$child_tx")
+
+echo '''
+***************
+* Ejercicio 8 *
+***************
+'''
+echo "Mostrando el detalle de la transacción 'child' emitida (usando mempoolentry):"
+bitcoin-cli getmempoolentry "$child_tx_hash" | jq
+
+echo '''
+***************
+* Ejercicio 9 *
+***************
+'''
+echo "Componiendo una transacción para sustituir a 'parent' con las mismas"
+echo "entradas pero una comisión de 10000 satoshis"
+amount="70"
+change_amount="29.99989"
+new_parent_tx=$(compose_rbf_transaction "$parent_utxos" "$trader_address" "$amount" "$miner_change_address" "$change_amount")
+
+echo '''
+****************
+* Ejercicio 10 *
+****************
+'''
+echo "Firmando la transacción y enviándola"
+new_parent_tx_hash=$(sign_and_send_transaction "Miner" "$new_parent_tx")
+
+echo '''
+****************
+* Ejercicio 11 *
+****************
+'''
+echo "Mostrando de nuevo el detalle de la transacción 'child' (usando mempoolentry):"
+bitcoin-cli getmempoolentry "$child_tx_hash" | jq
+
+echo """
+****************
+* Ejercicio 11 *
+****************
+
+El comando anterior ha fallado porque la transacción 'child' era CPFP, es decir,
+gastaba las salidas de la transacción 'parent' para incentivar al minero a minar
+ambas, ya que la transacción 'parent' tenía una comisión demasiado baja e iba a
+quedarse atascada en la mempool.
+
+Sin embargo, tras enviar la transacción 'child', se ha generado una nueva transacción
+'parent' que reemplazaba a la original aprovechando la funcionalidad RBF, es decir,
+reemplazando completamente la transacción original con una nueva con mayor comisión.
+
+Al reemplazar la transacción 'parent', la nueva transacción 'parent' ya no es la
+original. Tiene un txid diferente, por lo que la transacción 'child' utiliza un UTXO
+que ya no existe, y es eliminada de la mempool.
+"""
