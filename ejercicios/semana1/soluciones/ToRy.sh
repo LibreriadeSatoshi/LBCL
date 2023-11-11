@@ -1,6 +1,6 @@
 #!/bin/bash 
 #Shell Instalacion de Bitcoin Core 25.0 -Regtest + Minado.
-#By: ToRy
+#By: ToRy "☯The Purpple⚡ 🥷🏻ＮＩＮＪΛ🥷"
 
 #Colores
 endColour="\033[0m\e[0m"
@@ -46,8 +46,7 @@ echo           CREAR ARCHIVO bitcoin.conf  /home/<nombre-de-usuario>/.bitcoin/.
  
 		mkdir $HOME/.bitcoin
 		touch $HOME/.bitcoin/bitcoin.conf
-                nano bitcoin.conf
-
+                
 		echo "regtest=1" 
 		echo "fallbackfee=0.0001" 
 		echo "server=1" 
@@ -56,11 +55,12 @@ echo           CREAR ARCHIVO bitcoin.conf  /home/<nombre-de-usuario>/.bitcoin/.
 echo         GUARDAR ARCHIVO 
 
 
-             INICIAR BITCOIND.... ;)   
+echo         INICIAR BITCOIND.... ;)   
 	        
-
-              :~/bitcoin-25.0$ bitcoind -regtest -daemon -fallbackfee=1.0 -maxtxfee=1.1
-              Bitcoin Core starting
+              bitcoind -regtest -daemon 
+	      #bitcoind -regtest -daemon -fallbackfee=1.0 -maxtxfee=1.1
+              #bitcoind >/dev/null &
+        
 
 echo          COMPROBAR ACTIVIDAD RED:
               :~/bitcoin-25.0$ bitcoin-cli -regtest getnetworkinfo
@@ -68,23 +68,21 @@ echo          #aqui veremos si estamos conectados correctamente
 
 echo          VERIFICAR SI HAY WALLETS CREADAS:
               :~/bitcoin-25.0$ bitcoin-cli -regtest listwallets
-               [
-               ]
+
+	       
 echo          #si no hemos manipulado antes, estara vacio!
 
 echo          CREANDO NUEVA WALLET "Miners":   
               :~/bitcoin-25.0$ bitcoin-cli -regtest -named createwallet wallet_name="Miners"
-              {
-              "name": "Miners",
-              "warnings": [
+
+	
 echo         #aqui creamos nuestra primera wallet
     
 
 echo         CREANDO NUEVA WALLET "Traders":   
               :~/bitcoin-25.0$ bitcoin-cli -regtest -named createwallet wallet_name="Traders"
-              {
-              "name": "Traders",
-              "warnings": [
+
+	   
 echo         #aqui creamos nuestra segunda wallet
     
 echo         CREANDO DIRECCION PARA RECEPCION: 
@@ -93,9 +91,7 @@ echo         #nuestra primera direccion de recepcion!
 
 echo         COMPROBANDO WALLETS CREADAS:
 echo         :~/bitcoin-25.0$ bitcoin-cli -regtest listwallets
-             [
-             "Miners",
-             "Traders",
+             
 echo         #efectivamente vemos nuestras wallets
 
 
