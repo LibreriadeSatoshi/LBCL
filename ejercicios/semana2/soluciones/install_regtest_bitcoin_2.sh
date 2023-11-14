@@ -361,7 +361,7 @@ create_wallet(){
 	fees=$(bitcoin-cli getmempoolentry $txid_padre | jq -r '.fees.base')
 	weight=$(bitcoin-cli getmempoolentry $txid_padre | jq -r .weight)
 	
-	json='{"input": [ {"txid":'$input[0]', "vout": '$vout[0]'}, {"txid":'$input[1]', "vout": '$vout[1]'} ], "output": [ {"script_pubkey": '$script_pubkey[0]', "amount":'$amount[0]'},{"script_pubkey": '$script_pubkey[1]', "amount":'$amount[1]'}, ],"Fees": '$fees',"Weight": '$weight' (weight of the tx in vbytes)}'
+	json='{"input": [{"txid":"'$(echo $input | awk '{print $1}')'","vout":"'$(echo $vout | awk '{print $1}')'"},{"txid":"'$(echo $input | awk '{print $2}')'","vout":"'$(echo $vout | awk '{print $2}')'"}], "output": [{"script_pubkey":"'$(echo $script_pubkey | awk '{print $1}')'","amount":"'$(echo $amount | awk '{print $1}')'"},{"script_pubkey":"'$(echo $script_pubkey | awk '{print $2}')'","amount":"'$(echo $amount | awk '{print $2}')'"}],"Fees": '$fees',"Weight": '$weight'}' 
 	
 	echo "**************************************"
 	echo -e "\n${redColour}[+]${endColour}${blueColour}Imprime el JSON anterior en la terminal.${endColour}\n"
