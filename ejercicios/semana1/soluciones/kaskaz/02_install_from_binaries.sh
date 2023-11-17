@@ -8,13 +8,11 @@ sudo apt upgrade -y
 sudo apt-get install haveged gnupg dirmngr xxd -y
 
 # Versión a descargar
-#PLATFORM="x86_64"
-PLATFORM="aarch64"
-BITCOIN="bitcoin-core-25.1"
-BITCOINPLAIN=`echo $BITCOIN | sed 's/bitcoin-core/bitcoin/'`
+export BITCOIN="bitcoin-core-25.1"
+export BITCOINPLAIN=`echo $BITCOIN | sed 's/bitcoin-core/bitcoin/'`
 
 # Descargamos los binarios de Bitcoin Core
-wget https://bitcoincore.org/bin/$BITCOIN/$BITCOINPLAIN-$PLATFORM-linux-gnu.tar.gz
+wget https://bitcoincore.org/bin/$BITCOIN/$BITCOINPLAIN-x86_64-linux-gnu.tar.gz
 # Y los archivos con las sumas de verificación y las firmas PGP
 wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS.asc
 wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS
@@ -24,8 +22,8 @@ git clone https://github.com/bitcoin-core/guix.sigs.git
 for file in ./guix.sigs/builder-keys/*.gpg; do gpg --import "$file"; done
 
 # Verificamos la autenticidad del archivo SHA256SUMS 
-SHASIG=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Good signature"`
-SHACOUNT=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Good signature" | wc -l`
+export SHASIG=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Good signature"`
+export SHACOUNT=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Good signature" | wc -l`
 
 if [[ "$SHASIG" ]]
 then
@@ -37,7 +35,7 @@ fi
 
 # Busca en el directorio actual los archivos indicados en SHA256SUMS y 
 # comprueba sus sumas de verificación
-SHACHECK=`sha256sum -c --ignore-missing < SHA256SUMS 2>&1 | grep "OK"`
+export SHACHECK=`sha256sum -c --ignore-missing < SHA256SUMS 2>&1 | grep "OK"`
 
 if [ "$SHACHECK" ]
 then
@@ -47,7 +45,7 @@ else
 fi
 
 # Extrae los binarios
-tar xzf $BITCOINPLAIN-$PLATFORM-linux-gnu.tar.gz
+tar xzf $BITCOINPLAIN-x86_64-linux-gnu.tar.gz
 
 # Instala los ejecutables en las rutas por defecto del sistema
 sudo install -m 0755 -o root -g root -t /usr/local/bin $BITCOINPLAIN/bin/*
@@ -57,7 +55,7 @@ sudo cp -r $BITCOINPLAIN/share/man/man1 /usr/local/share/man
 command -v mandb && sudo mandb 
 
 # Elimina los archivos descargados
-rm -rf $BITCOINPLAIN $BITCOINPLAIN-$PLATFORM-linux-gnu.tar.gz guix.sigs SHA256SUMS.asc SHA256SUMS
+rm -rf $BITCOINPLAIN $BITCOINPLAIN-x86_64-linux-gnu.tar.gz guix.sigs SHA256SUMS.asc SHA256SUMS
 
 # Crea la carpeta de datos del nodo en la ubicación por defecto
 mkdir ~/.bitcoin
