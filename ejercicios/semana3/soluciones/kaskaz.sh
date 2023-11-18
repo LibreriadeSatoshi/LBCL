@@ -82,8 +82,8 @@ EOF
 clean() {
 
     echo "Deteniendo el servicio y borrando la configuración"
-    killall bitcoind
-    sleep 1
+    #killall bitcoind
+    #sleep 1
     #rm -fr ~/.bitcoin
     kill -s TERM $$
 }
@@ -402,9 +402,9 @@ echo """
 #sleep 1
 
 echo """
-***************
-* Ejercicio 1 *
-***************
+************************************
+* Configurar multisig. Ejercicio 1 *
+************************************
 """
 echo "Creando cartera 'Miner'"
 create_wallet_without_descriptor "Miner"
@@ -414,9 +414,9 @@ echo "Creando cartera 'Bob'"
 create_wallet_without_descriptor "Bob"
 
 echo """
-***************
-* Ejercicio 2 *
-***************
+************************************
+* Configurar multisig. Ejercicio 2 *
+************************************
 """
 echo "Creando dirección para recompensa de minado en la cartera 'Miner'"
 miner_address=$(create_address "Miner" "Recompensa de Minería")
@@ -480,9 +480,9 @@ echo "Saldo de Alice: $alice_balance BTC"
 echo "Saldo de Bob: $bob_balance BTC"
 
 echo """
-***************
-* Ejercicio 3 *
-***************
+************************************
+* Configurar multisig. Ejercicio 3 *
+************************************
 """
 echo "Creando dirección para 'Alice', para su uso en la dirección multifirma junto a 'Bob'"
 alice_multisig_address=$(create_address "Alice" "Dirección para multisig con Bob")
@@ -510,10 +510,15 @@ echo "script de redención quede almacenada en la wallet de cada uno de ellos."
 multisig_address=$(create_and_add_multisig_2_2 "Alice" "$alice_multisig_address_pubkey" "Bob" "$bob_multisig_address_pubkey")
 echo "Creada dirección multifirma: '$multisig_address'"
 
+echo ""
+echo "Importando la dirección multifirma en las carteras de ambos participantes"
+bitcoin-cli -rpcwallet="Alice" -named importaddress address="$multisig_address" rescan="false"
+bitcoin-cli -rpcwallet="Bob" -named importaddress address="$multisig_address" rescan="false"
+
 echo """
-***************
-* Ejercicio 4 *
-***************
+************************************
+* Configurar multisig. Ejercicio 4 *
+************************************
 
 Crearemos una PSBT para que 'Alice' y 'Bob' fondeen su cuenta conjunta a la vez
 sin necesidad de confiar el uno en que el otro cumplirá su parte.
@@ -607,10 +612,35 @@ final_tx_hex=$(echo $finalize_output | jq -r '.hex')
 final_tx_id=$(bitcoin-cli -named sendrawtransaction hexstring="$final_tx_hex")
 echo "ID de transacción: '$final_tx_id'"
 
+echo """
+************************************
+* Configurar multisig. Ejercicio 5 *
+************************************
 
+Minando un bloque para procesar la transacción
+"""
+bitcoin-cli -rpcwallet="Miner" -generate 1 > /dev/null
 
+echo """
+************************************
+* Configurar multisig. Ejercicio 6 *
+************************************
+"""
+echo "Saldos de cada participante:"
+alice_balance=$(bitcoin-cli -rpcwallet="Alice" getbalance)
+bob_balance=$(bitcoin-cli -rpcwallet="Bob" getbalance)
+echo "Saldo de Alice: $alice_balance BTC"
+echo "Saldo de Bob: $bob_balance BTC"
 
-
+echo """
+Los saldos no incluyen la cantidad disponible en la dirección multisig,
+pero pueden verse con el comando 'getreceivedbyaddress', indicando la
+dirección multisig:
+"""
+alice_multisig_balance=$(bitcoin-cli -rpcwallet="Alice" getreceivedbyaddress "$multisig_address")
+bob_multisig_balance=$(bitcoin-cli -rpcwallet="Bob" getreceivedbyaddress "$multisig_address")
+echo "Saldo multisig según Alice: $alice_multisig_balance BTC"
+echo "Saldo multisig según Bob: $bob_multisig_balance BTC"
 
 
 
