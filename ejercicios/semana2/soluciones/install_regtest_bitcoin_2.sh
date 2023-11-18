@@ -290,43 +290,37 @@ create_wallet(){
 	echo -e "\n${redColour}[+]${endColour}${blueColour}Crear una transacción desde Miner a Trader con la siguiente estructura (llamémosla la transacción parent).${endColour}\n"
 	
 	txid_miner_cero=$(bitcoin-cli -rpcwallet=Miner listunspent | jq -r .[0].txid)
-	txid_miner_uno=$(bitcoin-cli -rpcwallet=Miner listunspent | jq -r .[1].txid)
 	vout_miner_cero=$(bitcoin-cli -rpcwallet=Miner listunspent | jq -r .[0].vout)
+	
+	txid_miner_uno=$(bitcoin-cli -rpcwallet=Miner listunspent | jq -r .[1].txid)
 	vout_miner_uno=$(bitcoin-cli -rpcwallet=Miner listunspent | jq -r .[1].vout)
 	
 
-	echo -e "${yellowColour}Entrada[0]: Recompensa en bloque de 50 BTC:${endColour}"
-	echo -e "\n${blueColour}TRANSACCION ID       OUTPUT DE LA TRANSACCION${endColour}"
-	echo -e "----------------------------------------- -----------"
-	echo -e "$(printf %25s "$txid_miner_cero") $(printf %25s "$vout_miner_cero")"
-
-	echo "**************************************"
-	echo -e "${yellowColour}Entrada[1]: Recompensa en bloque de 50 BTC.${endColour}"
-	echo -e "\n${blueColour}TRANSACCION ID       OUTPUT DE LA TRANSACCION${endColour}"
-	echo -e "----------  ----------  ----------------  ----------------"
-	echo -e "$(printf %9s "$txid_miner_uno") $(printf %25s "$vout_miner_uno")"
-	
-	
-	#Salida[0]: 70 BTC para Trader.
-	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Salida[0]: 70 BTC para Trader.${endColour}\n"
-	
-	#Fondear wallet para Trader.
-	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Fondear wallet para Trader.${endColour}\n"
-
+	#Entradas
+	echo "*************ENTRADAS*****************"
+	echo "*************************************"
+	echo -e "${blueColour}Entrada[0]:${endColour}${yellowColour} Recompensa en bloque de 50 BTC:${endColour}"
+	echo -e "${blueColour}TRANSACCION ID[0]:${endColour} ${yellowColour}$txid_miner_cero${endColour}"
+	echo
+	echo -e "${blueColour}Entrada[1]:${endColour}${yellowColour} Recompensa en bloque de 50 BTC:${endColour}"
+	echo -e "${blueColour}TRANSACCION ID[1]:${endColour} ${yellowColour}$txid_miner_uno${endColour}"
+	echo
+	#Salidas
+	echo "*************SALIDAS*****************"
+	echo "*************************************"
 	#Generar direccion Trader
 	address_trader=$(bitcoin-cli -rpcwallet=Trader getnewaddress "Recibido Trader")
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Direccion del Trader:${endColour} ${yellowColour} ${address_trader}.${endColour}\n"
 	
-	#Depositar 70 BTC para Trader, primero generaremos un address para el cambio y activaremos RBF.
-	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Generar address de cambio.${endColour}\n"
+	echo -e "${blueColour}Salida[0]:${endColour}${yellowColour}70 BTC para Trader.${endColour}"
+	echo -e "${blueColour}Direccion del Trader:${endColour} ${yellowColour} ${address_trader}.${endColour}\n"
+
+	#Generar direccion Cambio
+	address_cambio_miner=$(bitcoin-cli -rpcwallet=Miner getnewaddress "Cambio Miner")
 	
-	address_cambio_miner=$(bitcoin-cli -rpcwallet=Trader getnewaddress "Cambio Miner")
+	echo -e "${blueColour}Salida[1]:${endColour}${yellowColour} 29.99999 BTC de cambio para Miner.${endColour}"
+	echo -e "${blueColour}Direccion de cambio:${endColour} ${yellowColour} ${address_cambio_miner}.${endColour}\n"
 	
-	#Salida[0]: 70 BTC para Trader.
-    #Salida[1]: 29.99999 BTC de cambio para Miner.
+	echo
 	
 	#Variables para los valores monetarios.
 	deposito_coins_trader=70.00000000
@@ -338,7 +332,6 @@ create_wallet(){
 
 	tx_padre=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txid_miner_cero'", "vout":'$vout_miner_cero', "sequence": 1}, {"txid": "'$txid_miner_uno'", "vout":'$vout_miner_uno', "sequence": 1 } ]''' outputs='''[ { "'$address_trader'":'$deposito_coins_trader'}, {"'$address_cambio_miner'":'$cambio_coins_miner' } ]''')
 	
-	echo $tx_padre
 	
 	bitcoin-cli decoderawtransaction $tx_padre| jq -r '.vin | .[]'
 	
@@ -380,18 +373,17 @@ create_wallet(){
 	address_hijo=$(bitcoin-cli -rpcwallet=Miner getnewaddress "Deposito hijo")
 	
 	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Depositar 70 BTC para el Trader activando RBF a esta dirección:${endColour} ${yellowColour}${address_hijo}.${endColour}\n".
-	#De la misma manera que la anterior, pero sin sequence activado y enviandose al padre
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Dirección hijo:${endColour} ${yellowColour}${address_hijo}.${endColour}\n".
+	echo
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Crear transacciòn de Parent a hijo:${endColour} ${yellowColour}${address_hijo}.${endColour}\n".
 	
 	#variable para valor monetario
 	deposito_coins_hijo=29.99998
 	tx_hijo=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txid_padre'", "vout": 1} ]''' outputs='''[ { "'$address_hijo'": 29.99998 } ]''')
-	
-	echo $tx_hijo
 		
 	#Firmar y transmitir la transacción hijo.
 	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Firmar y transmitir la transacción parent, pero no la confirmes aún.${endColour}\n"
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Firmar y transmitir la transacción hijo.${endColour}\n"
 	signed_tx_hijo=$(bitcoin-cli -rpcwallet=Miner signrawtransactionwithwallet $tx_hijo | jq -r .hex)
 	txid_hijo=$(bitcoin-cli sendrawtransaction $signed_tx_hijo)
 	
@@ -399,19 +391,19 @@ create_wallet(){
 	echo "**************************************"
 	echo -e "\n${redColour}[+]${endColour}${blueColour}Realiza una consulta getmempoolentry para la tranasacción child y muestra la salida.${endColour}\n"
 	
-	getmempoolentry_hijo=$(bitcoin-cli getmempoolentry $txid_hijo | jq)
-	echo $getmempoolentry_hijo
+	bitcoin-cli getrawmempool | jq
+	bitcoin-cli getmempoolentry $txid_hijo | jq
 	
 	#Ahora, aumenta la tarifa de la transacción parent utilizando RBF. No uses bitcoin-cli bumpfee, en su lugar, crea manualmente una transacción conflictiva que tenga las mismas entradas que la transacción parent pero salidas diferentes, ajustando sus valores para aumentar la tarifa de la transacción parent en 10,000 satoshis.
 	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Crea manualmente una transacción conflictiva que tenga las mismas entradas que la transacción parent pero salidas diferentes${endColour}\n"
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Crea manualmente una transacción conflictiva que tenga las mismas entradas que la transacción parent pero salidas diferente, amentando la tarifa de la transacción parent en 10,0000.${endColour}\n"
 	
 	cambio_up=$(echo "${cambio_coins_miner} - 0.00010000" | bc)
-	tx_padre_up$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txid_miner_cero'", "vout":'$vout_miner_cero', "sequence": 1}, {"txid": "'$txid_miner_uno'", "vout":'$vout_miner_uno', "sequence": 1 } ]''' outputs='''[ { "'$address_trader'":'$deposito_coins_trader'}, {"'$address_cambio_miner'":'$cambio_up'} ]''')
+	tx_padre_up=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txid_miner_cero'", "vout":'$vout_miner_cero', "sequence": 1}, {"txid": "'$txid_miner_uno'", "vout":'$vout_miner_uno', "sequence": 1 } ]''' outputs='''[ { "'$address_trader'":'$deposito_coins_trader'}, {"'$address_cambio_miner'":'$cambio_up'} ]''')
 	
-	#Firmar y transmitir la transacción parent, pero no la confirmes aún.
+	#Firmar y transmitir la nueva transacción parent.
 	echo "**************************************"
-	echo -e "\n${redColour}[+]${endColour}${blueColour}Firmar y transmitir la transacción parent, pero no la confirmes aún.${endColour}\n"
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Firmar y transmitir la nueva transacción parent.${endColour}\n"
 	signed_tx_padre_up=$(bitcoin-cli -rpcwallet=Miner signrawtransactionwithwallet $tx_padre_up | jq -r .hex)
 	txid_padre=$(bitcoin-cli sendrawtransaction $signed_tx_padre_up)
 	
@@ -419,10 +411,14 @@ create_wallet(){
 	echo "**************************************"
 	echo -e "\n${redColour}[+]${endColour}${blueColour}Realiza otra consulta getmempoolentry para la transacción child y muestra el resultado.${endColour}\n"
 	
+	bitcoin-cli getrawmempool | jq
 	bitcoin-cli getmempoolentry $txid_hijo | jq
 	
 	#Imprime una explicación en la terminal de lo que cambió en los dos resultados de getmempoolentry para las transacciones child y por qué.
 	
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Imprime una explicación en la terminal de lo que cambió en los dos resultados de getmempoolentry para las transacciones child y por qué.${endColour}\n"
+	echo
+	echo -e "\n${redColour}[+]${endColour}${blueColour}Al crear una nueva transacción a partir de Parent que gasta las mismas monedas pero con una fee superior, se invalida la anterior, asì que el hijo queda sin padre por asì decirlo, y la transacción es rechazada.${endColour}\n"
 	
 	sleep 3
 	
