@@ -82,9 +82,9 @@ EOF
 clean() {
 
     echo "Deteniendo el servicio y borrando la configuración"
-    #killall bitcoind
-    #sleep 1
-    #rm -fr ~/.bitcoin
+    killall bitcoind
+    sleep 1
+    rm -fr ~/.bitcoin
     kill -s TERM $$
 }
 
@@ -201,12 +201,15 @@ mine_until_balance_equals() {
 # Parámetros:
 #   $1 - Nombre de la cartera asociada a la dirección de recompensa.
 #   $2 - Número de UTXOs deseados.
+#   $3 - Seleccionar UTXOs de una dirección específica (opcional).
 find_first_utxos() {
 
     local wallet_name=$1
     local requested_utxos_count=$2
+    local filter_address=$3
 
-    local utxos=$(bitcoin-cli -rpcwallet="$wallet_name" listunspent | jq '[.[:'$requested_utxos_count'][] | { txid: .txid, vout: .vout }]')
+    local addresses=$(jq -n --arg var "$address" 'if $var | length > 0 then [$var] else [] end')
+    local utxos=$(bitcoin-cli -rpcwallet="$wallet_name" -named listunspent addresses="$addresses" | jq '[.[:'$requested_utxos_count'][] | { txid: .txid, vout: .vout }]')
     local obtained_utxos_count=$(echo $utxos | jq 'length')
 
     if [ "$requested_utxos_count" == "$obtained_utxos_count" ]
@@ -320,6 +323,10 @@ create_and_add_multisig_2_2() {
     # de la dirección multifirma en la segunda cartera
     bitcoin-cli -rpcwallet="$party_2_wallet" -named addmultisigaddress nrequired=2 keys="$keys" > /dev/null
 
+    # Importa la nueva dirección en ambas carteras para poder hacer seguimiento del saldo
+    bitcoin-cli -rpcwallet="$party_1_wallet" -named importaddress address="$address" rescan="false" > /dev/null
+    bitcoin-cli -rpcwallet="$party_2_wallet" -named importaddress address="$address" rescan="false" > /dev/null
+
     echo $address
 }
 
@@ -385,21 +392,58 @@ create_two_parties_funding_psbt() {
     fi
 }
 
+# create_two_parties_settling_psbt - Crea una transacción PSBT para liquidar una dirección multifirma.
+#
+# Crea una transacción PSBT en la que dos participantes extraen los fondos conjuntamente
+# de una dirección multisig. Esta función desempeña el rol 'Creator' en el flujo PSBT, por
+# lo que únicamente define los 'vin' y 'vout'.
+#
+# Nota 1: No se incluyen parámetros de cambio ya que la idea de este tipo de transacción es
+#         dejar la dirección multisig con saldo cero.
+#
+# Parámetros:
+#   $1 - JSON con los UTXOs a incluir de la dirección multisig.
+#   $2 - Dirección de destino del primer participante.
+#   $3 - Importe a enviar al primer participante.
+#   $4 - Dirección de destino del segundo participante.
+#   $5 - Importe a enviar al segundo participante.
+create_two_parties_settling_psbt() {
+
+    local multisig_utxos=$1
+    local party_1_address=$2
+    local party_1_amount=$3
+    local party_2_address=$4
+    local party_2_amount=$5
+
+    local inputs=$(echo $multisig_utxos | jq 'map({ txid: .txid, vout: .vout })')
+    local outputs='''{ "'$party_1_address'": '$party_1_amount', "'$party_2_address'": '$party_2_amount' }'''
+
+    psbt=$(bitcoin-cli -named createpsbt inputs="$inputs" outputs="$outputs")
+
+    if [ ! -z "$psbt" ]
+    then
+        echo "$psbt"
+    else
+        (>&2 echo "Error. No se ha podido componer la transacción solicitada")
+        clean
+    fi
+}
+
 
 echo """
 **************************
 * Descarga e instalación *
 **************************
 """
-#install_bitcoin_core
+install_bitcoin_core
 
 echo """
 **********************
 * Iniciando bitcoind *
 **********************
 """
-#bitcoind -daemon
-#sleep 1
+bitcoind -daemon
+sleep 1
 
 echo """
 ************************************
@@ -510,11 +554,6 @@ echo "script de redención quede almacenada en la wallet de cada uno de ellos."
 multisig_address=$(create_and_add_multisig_2_2 "Alice" "$alice_multisig_address_pubkey" "Bob" "$bob_multisig_address_pubkey")
 echo "Creada dirección multifirma: '$multisig_address'"
 
-echo ""
-echo "Importando la dirección multifirma en las carteras de ambos participantes"
-bitcoin-cli -rpcwallet="Alice" -named importaddress address="$multisig_address" rescan="false"
-bitcoin-cli -rpcwallet="Bob" -named importaddress address="$multisig_address" rescan="false"
-
 echo """
 ************************************
 * Configurar multisig. Ejercicio 4 *
@@ -553,6 +592,10 @@ fund_psbt=$(create_two_parties_funding_psbt \
     "$bob_change_address" "$bob_change_amount" \
 )
 
+echo ""
+echo "PSBT recién creada:"
+echo $fund_psbt
+
 echo """
 El siguiente paso es completar la PSBT con los datos de los UTXOs que contiene.
 Este paso lo realiza el rol 'Actualizador'. Como en este caso contiene UTXOs de dos
@@ -572,9 +615,17 @@ echo "(Esta parte ocurriría en la máquina de 'Alice')"
 alice_signed_psbt=$(bitcoin-cli --rpcwallet="Alice" walletprocesspsbt "$fund_psbt" | jq -r '.psbt')
 
 echo ""
+echo "PSBT actualizada y firmada por 'Alice':"
+echo $alice_signed_psbt
+
+echo ""
 echo "Actualizando y firmando la copia de 'Bob' de la PSBT"
 echo "(Esta parte ocurriría en la máquina de 'Bob')"
 bob_signed_psbt=$(bitcoin-cli --rpcwallet="Bob" walletprocesspsbt "$fund_psbt" | jq -r '.psbt')
+
+echo ""
+echo "PSBT actualizada y firmada por 'Bob':"
+echo $bob_signed_psbt
 
 echo """
 Ahora cada participante ha actualizado y firmado su copia de la PSBT. Estas copias
@@ -588,6 +639,10 @@ En bitcoin-cli este paso se realiza con el comando 'combinepsbt'.
 
 echo "Finalizando PSBT, combinando las transacciones parcialmente firmadas"
 final_psbt=$(bitcoin-cli combinepsbt '''[ "'$alice_signed_psbt'", "'$bob_signed_psbt'" ]''')
+
+echo ""
+echo "PSBT combinada con las actualizaciones y firmas de 'Alice' y 'Bob':"
+echo $final_psbt
 
 echo """
 Ahora la PSBT está finalizada (actualizada, firmada y combinada). El último paso
@@ -633,16 +688,107 @@ echo "Saldo de Alice: $alice_balance BTC"
 echo "Saldo de Bob: $bob_balance BTC"
 
 echo """
-Los saldos no incluyen la cantidad disponible en la dirección multisig,
-pero pueden verse con el comando 'getreceivedbyaddress', indicando la
-dirección multisig:
+**********************************
+* Liquidar multisig. Ejercicio 1 *
+**********************************
+
+Crearemos una PSBT para que 'Alice' y 'Bob' recuperen sus fondos de su cuenta
+multifirma a la vez.
 """
-alice_multisig_balance=$(bitcoin-cli -rpcwallet="Alice" getreceivedbyaddress "$multisig_address")
-bob_multisig_balance=$(bitcoin-cli -rpcwallet="Bob" getreceivedbyaddress "$multisig_address")
-echo "Saldo multisig según Alice: $alice_multisig_balance BTC"
-echo "Saldo multisig según Bob: $bob_multisig_balance BTC"
 
+echo "Creando dirección de recepción para 'Alice'"
+alice_settle_address=$(create_address "Alice" "Recepción de fondos de liquidación multifirma")
+echo "Creada dirección: '$alice_settle_address'"
 
+echo ""
+echo "Creando dirección de recepción para 'Bob'"
+bob_settle_address=$(create_address "Bob" "Recepción de fondos de liquidación multifirma")
+echo "Creada dirección: '$bob_settle_address'"
+
+echo ""
+echo "Seleccionando el único UTXO disponible de la cuenta multisig'"
+multisig_utxos='''[ { "txid": "'$final_tx_id'", "vout": 0 } ]'''
+
+echo ""
+echo "Componiendo la transacción PSBT. Este paso lo realiza el rol 'Creador'"
+alice_amount="9.99995"
+bob_amount="9.99995"
+settle_psbt=$(create_two_parties_settling_psbt \
+    "$multisig_utxos" \
+    "$alice_settle_address" "$alice_amount" \
+    "$bob_settle_address" "$bob_amount" \
+)
+
+echo ""
+echo "PSBT recién creada:"
+echo $settle_psbt
+
+echo """
+**********************************
+* Liquidar multisig. Ejercicio 2 *
+**********************************
+
+Actualizando y firmando la copia de 'Alice' de la PSBT
+(Esta parte ocurriría en la máquina de 'Alice')
+"""
+alice_signed_psbt=$(bitcoin-cli --rpcwallet="Alice" walletprocesspsbt "$settle_psbt" | jq -r '.psbt')
+
+echo "PSBT actualizada y firmada por 'Alice':"
+echo $alice_signed_psbt
+
+echo """
+**********************************
+* Liquidar multisig. Ejercicio 3 *
+**********************************
+
+Actualizando y firmando la copia de 'Bob' de la PSBT
+(Esta parte ocurriría en la máquina de 'Bob')
+"""
+bob_signed_psbt=$(bitcoin-cli --rpcwallet="Bob" walletprocesspsbt "$settle_psbt" | jq -r '.psbt')
+
+echo "PSBT actualizada y firmada por 'Bob':"
+echo $bob_signed_psbt
+
+echo """
+**********************************
+* Liquidar multisig. Ejercicio 4 *
+**********************************
+
+Finalizando, extrayendo y transmitiendo la transacción.
+"""
+settle_psbt=$(bitcoin-cli combinepsbt '''[ "'$alice_signed_psbt'", "'$bob_signed_psbt'" ]''')
+
+echo "PSBT combinada con las actualizaciones y firmas de 'Alice' y 'Bob':"
+echo $settle_psbt
+
+finalize_output=$(bitcoin-cli finalizepsbt "$settle_psbt")
+
+if [ "true" != "$(echo $finalize_output | jq -r '.complete')" ]
+then
+    echo "El campo 'complete' devuelto por 'finalizepsbt' debe ser true"
+    clean
+fi
+
+echo ""
+echo "Enviando la transacción a la red"
+final_tx_hex=$(echo $finalize_output | jq -r '.hex')
+final_tx_id=$(bitcoin-cli -named sendrawtransaction hexstring="$final_tx_hex")
+echo "ID de transacción: '$final_tx_id'"
+
+echo ""
+echo "Minando un bloque para procesar la transacción"
+bitcoin-cli -rpcwallet="Miner" -generate 1 > /dev/null
+
+echo """
+**********************************
+* Liquidar multisig. Ejercicio 5 *
+**********************************
+"""
+echo "Saldos de cada participante:"
+alice_balance=$(bitcoin-cli -rpcwallet="Alice" getbalance)
+bob_balance=$(bitcoin-cli -rpcwallet="Bob" getbalance)
+echo "Saldo de Alice: $alice_balance BTC"
+echo "Saldo de Bob: $bob_balance BTC"
 
 echo """
 **************************
