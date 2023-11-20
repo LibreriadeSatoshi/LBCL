@@ -1,0 +1,390 @@
+#!/bin/bash
+
+#####5672I5976R3645V6548I5647N3297G
+
+echo -e "\e[35m********************************ACCIONES DE SEMANA 1 PARA SEMANA3*****************************************\e[0m"
+
+bitcoin-cli stop
+
+echo -e "\e[31mCerrando Bitcoin Core para iniciar instalacion nueva, por favor espere... \e[0m"
+
+sleep 7
+
+sudo rm -r ~/.bitcoin
+
+####CONFIGURACION
+
+echo -e "\e[36m¿Que versión de bitcoin quieres instalar?[22.0, 22.1, 23.0, 23.1, 23.2, 24.0.1, 24.1, 24.2, 25.0, 25.1]\e[0m"
+#read version
+version=25.1
+
+#####Instalar paquetes recomendados
+
+sudo apt-get install -y bc jq autoconf file gcc libc-dev make g++ pkgconf re2c git libtool automake gcc xxd
+
+#####1.Descargar los binarios principales de Bitcoin desde el sitio web de Bitcoin Core https://bitcoincore.org/.
+#####Descargar Bitcoin-core
+
+echo -e "\e[34m$0 - Descargando Bitcoin\e[0m"
+
+mkdir btctemp
+
+cd btctemp
+
+BITCOIN="bitcoin-core-$version"
+BITCOINVER=`echo $BITCOIN | sed 's/bitcoin-core/bitcoin/'`
+
+wget https://bitcoincore.org/bin/$BITCOIN/$BITCOINVER-x86_64-linux-gnu.tar.gz
+wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS.asc
+wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS
+
+#####2. Utilizar los hashes y la firma descargados para verificar que los binarios sean correctos. Imprimir un mensaje en la terminal: "Verificación exitosa de la firma binaria".
+#####Verificacion de archivos
+
+gpg --keyserver hkps://keys.openpgp.org --refresh-keys 
+
+git clone https://github.com/bitcoin-core/guix.sigs
+gpg --import guix.sigs/builder-keys/*
+
+echo -e "\e[34m$0 - Verificando Bitcoin.\e[0m"
+
+export SHASIG=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Firma correcta"`
+export SHACOUNT=`gpg --verify SHA256SUMS.asc SHA256SUMS	2>&1 | grep "Firma correcta" | wc -l`
+
+if [[ "$SHASIG" ]]
+then
+
+    echo -e "\e[32m$0 - VERIFICACION DE FIRMA EXITOSA: $SHACOUNT FIRMA CORRECTA ENCONTRADA\e[0m"
+    echo "$SHASIG"
+
+else
+
+	(>&2 echo -e "\e[31m$0 - ERROR EN VERIFICACION DE FIRMAS: No hay firmas verificadas para Bitcoin!\e[0m")
+
+fi
+
+#####Verificacion Bitcoin: SHA
+
+SHACHECK=`sha256sum --ignore-missing --check SHA256SUMS 2>&1 | grep "La suma coincide"`
+
+if [ "$SHACHECK" ]
+then
+
+   echo -e "\e[32m$0 - VERIFIACION SHA EXITOSA / SHA: $SHACHECK\e[0m"
+
+else
+
+    (>&2 echo -e "\e[31m$0 - ERROR EN VERIFICACION SHA: SHA para Bitcoin no coincidió!\e[0m")
+
+fi
+
+while true; do
+
+  echo -e "\e[34mConfirma que ambas verificaciones fueron correctas, ¿Deseas continuar?\e[0m"
+
+#  read -p "[si/no]" opcion
+
+opcion=si
+
+  case "$opcion" in
+
+    no)
+
+ echo -e "\e[31m$0 Cancelado, verifique las firmas, ¡algo anda mal!\e[0m"
+
+cd .. 
+
+sudo rm -rf btctemp
+
+
+exit 1
+
+break
+      ;;
+
+    si)
+
+break
+
+      ;;
+
+    *)
+
+      echo -e "\e[34mOpción no válida. Por favor, selecciona una opción válida [si/no].\e[0m"
+
+      ;;
+
+  esac
+  
+done
+
+#####3. Copiar los binarios descargados a la carpeta /usr/local/bin/.
+#####Eliminando y copiando archivos
+
+echo -e "\e[34m$0 - Instalando Bitcoin.\e[0m"
+
+tar xzf ./$BITCOINVER-x86_64-linux-gnu.tar.gz
+
+sudo cp -r ./$BITCOINVER/bin/* /usr/local/bin/
+
+cd .. 
+
+sudo rm -rf btctemp
+
+cd /home/$USER
+
+#####INICIO
+#####1.Crear un archivo bitcoin.conf en el directorio de datos /home/<nombre-de-usuario>/.bitcoin/. Crear el directorio si no existe. Y agregar las siguientes líneas al archivo:
+
+carpeta=.bitcoin
+
+if [ ! -d "$carpeta" ] 
+then
+
+mkdir "$carpeta"
+
+echo ""
+
+else
+
+echo ""
+fi
+
+cd /home/$USER/$carpeta
+
+touch bitcoin.conf
+
+while true; do
+  echo -e "\e[36mElija el tipo de nodo:\e[0m"
+  echo "1 - Mainnet"
+  echo "2 - Testnet"
+  echo "3 - Regtest (unico disponible por lo pronto...)"
+  echo "4 - Salir"
+  
+#  read -p "Selecciona una opción (1-4): " nodo
+
+nodo=3
+
+  case "$nodo" in
+    1)
+     echo -e "\e[36mCreando bitcoin.conf para Mainnet...\e[0m"
+
+cat > bitcoin.conf <<EOF
+
+#server=1
+#txindex=1
+#daemon=1
+#pruned=0
+#rpcport=8332
+#rpcbind=0.0.0.0
+#rpcallowip=127.0.0.1
+#rpcallowip=10.0.0.0/8
+#rpcallowip=172.0.0.0/8
+#rpcallowip=192.0.0.0/8
+#zmqpubrawblock=tcp://0.0.0.0:28332
+#zmqpubrawtx=tcp://0.0.0.0:28333
+#zmqpubhashblock=tcp://0.0.0.0:28334
+#whitelist=127.0.0.1
+#peerbloomfilters=1 
+
+EOF
+
+break
+      ;;
+    2)
+      echo -e "\e[36mCreando bitcoin.conf para Testnet...\e[0m"
+
+cat > bitcoin.conf << EOF
+
+Testnet
+
+EOF
+
+break
+      ;;
+    3)
+      echo -e "\e[36mCreando bitcoin.conf para Regtest...\e[0m"
+
+cat > bitcoin.conf << EOF
+
+regtest=1
+fallbackfee=0.0001
+server=1
+txindex=1
+
+EOF
+
+break
+      ;;
+    4)
+      echo "Saliendo... Vuelva a empezar."
+      exit 1
+      ;;
+    *)
+      echo "Opción no válida. Por favor, selecciona una opción válida (1-4)."
+      ;;
+  esac
+
+done
+
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m*************************************** INICIO SEMANA 3 ******************************************\e[0m"
+
+bitcoind -daemon
+
+sleep 10
+
+####1.Crear tres monederos: Miner, Alice y Bob. Es importante usar billeteras sin descriptores, ya que sino lo hacemos, nos encontraremos con problemas al usar la opción de bitcoin-cli addmultisigaddress. 
+
+echo -e "\e[36m1.Creando billeteras Miner, Alice y Bob.\e[0m"
+
+bitcoin-cli -named createwallet wallet_name="Miner" descriptors=false
+bitcoin-cli -named createwallet wallet_name="Alice" descriptors=false
+bitcoin-cli -named createwallet wallet_name="Bob" descriptors=false
+
+sleep 5
+
+####2.Fondear los monederos generando algunos bloques para Miner y enviando algunas monedas a Alice y Bob.
+
+echo -e "\e[36m2.Fondenado billetera Miner y enviando a Alice y Bob.\e[0m"
+
+sleep 3
+
+echo -e "\e[33mFondeando Miner...\e[0m"
+
+adminer=`bitcoin-cli -rpcwallet=Miner getnewaddress`
+bitcoin-cli generatetoaddress 105 "$adminer"
+saldominer=`bitcoin-cli -rpcwallet=Miner getbalance`
+
+echo -e "\e[33mDireccion Miner:\e[0m $adminer, \e[33mBalance:\e[0m $saldominer"
+
+sleep 3
+
+adalice=`bitcoin-cli -rpcwallet=Alice getnewaddress "Fondeo Alice"`
+txalice=`bitcoin-cli -rpcwallet=Miner sendtoaddress $adalice 49`
+bitcoin-cli generatetoaddress 1 "$adminer"
+
+sleep 2
+
+saldoalice=`bitcoin-cli -rpcwallet=Alice getbalance`
+
+adbob=`bitcoin-cli -rpcwallet=Bob getnewaddress "Fondeo Bob"`
+txbob=`bitcoin-cli -rpcwallet=Miner sendtoaddress $adbob 51`
+bitcoin-cli generatetoaddress 1 "$adminer"
+
+sleep 2
+
+saldobob=`bitcoin-cli -rpcwallet=Bob getbalance`
+
+echo -e "\e[33mTx de Miner a Alice:\e[0m $txalice"
+echo -e "\e[33mDireccion Alice:\e[0m $adalice, \e[33mBalance:\e[0m $saldoalice"
+
+echo -e "\e[33mTx de Miner a Bob:\e[0m $txbob"
+echo -e "\e[33mDireccion Bob:\e[0m $adbob, \e[33mBalance:\e[0m $saldobob"
+
+sleep 5
+
+####3.Crear una dirección Multisig 2-de-2 combinando las claves públicas de Alice y Bob.
+
+echo -e "\e[36m3.Creando multifirma con xpub de Alice y Bob\e[0m"
+
+sleep 3
+
+adalicemf=`bitcoin-cli -rpcwallet=Alice getnewaddress "Alice Multifirma"`
+adbobmf=`bitcoin-cli -rpcwallet=Bob getnewaddress "Bob Multifirma"`
+echo -e "\e[33mDireccion multifirma Bob:\e[0m $adalicemf"
+echo -e "\e[33mDireccion multifirma Alice:\e[0m $adbobmf"
+
+xpubalice=$(bitcoin-cli -rpcwallet=Alice -named getaddressinfo address=$adalicemf |jq -r .pubkey)
+xpubbob=$(bitcoin-cli -rpcwallet=Bob -named getaddressinfo address=$adbobmf |jq -r .pubkey)
+
+echo -e "\e[31mLLaves publicas:\e[0m"
+echo -e "\e[33mLlave publca Alice:\e[0m $xpubalice"
+echo -e "\e[33mLlave publca Bob:\e[0m $xpubbob"
+
+sleep 3
+
+admultifirma=`bitcoin-cli -named -rpcwallet=Alice addmultisigaddress nrequired=2 keys='''["'$xpubalice'","'$xpubbob'"]'''|jq -r .address`
+
+echo -e "\e[33mDireccion Multifirma:\e[0m $admultifirma"
+
+sleep 5
+
+####4.Crear una Transacción Bitcoin Parcialmente Firmada (PSBT) para financiar la dirección multisig con 20 BTC, tomando 10 BTC de Alice y 10 BTC de Bob, y proporcionando el cambio correcto a cada uno de ellos.
+
+echo -e "\e[36m4.Creando PSBT con 10 BTC de Alice y 10 BTC de Bob y generando cambios correctos.\e[0m"
+
+adalicecambio=`bitcoin-cli -rpcwallet=Alice getnewaddress "Alice cambio"`
+adbobcambio=`bitcoin-cli -rpcwallet=Bob getnewaddress "Bob cambio"`
+
+echo -e "\e[33mDireccion cambio Alice:\e[0m $adalicecambio"
+echo -e "\e[33mDireccion cambio Bob:\e[0m $adbobcambio"
+
+
+txidalice=$(bitcoin-cli -rpcwallet=Alice listunspent |jq -r '.[]| .txid')
+voutalice=$(bitcoin-cli -rpcwallet=Alice listunspent |jq -r '.[]| .vout')
+amountalice=$(bitcoin-cli -rpcwallet=Alice listunspent |jq -r '.[]| .amount')
+
+echo -e "\e[33mtxid alice:\e[0m $txidalice"
+echo -e "\e[33mvout alice:\e[0m $voutalice"
+echo -e "\e[33mamount alice:\e[0m $amountalice"
+
+txidbob=$(bitcoin-cli -rpcwallet=Bob listunspent |jq -r '.[]| .txid')
+voutbob=$(bitcoin-cli -rpcwallet=Bob listunspent |jq -r '.[]| .vout')
+amountbob=$(bitcoin-cli -rpcwallet=Bob listunspent |jq -r '.[]| .amount')
+
+echo -e "\e[33mtxid Bob:\e[0m $txidbob"
+echo -e "\e[33mvout Bob:\e[0m $voutbob"
+echo -e "\e[33mamount Bob:\e[0m $amountbob"
+
+sleep 5
+
+psbt=$(bitcoin-cli -named createpsbt inputs='''[ { "txid": "'$txidalice'", "vout": '${voutalice}' }, { "txid": "'$txidbob'", "vout": '${voutbob}' } ]''' outputs='''[ { "'$admultifirma'": 20 }, { "'$adalicecambio'": 38.99995 }, { "'$adbobcambio'": 40.99995 } ]''')
+
+echo -e "\e[33mPSBT:\e[0m $psbt"
+
+bitcoin-cli -named analyzepsbt psbt=$psbt | jq
+psbtalicefirma=$(bitcoin-cli -rpcwallet=Alice walletprocesspsbt $psbt | jq -r '.psbt')
+bitcoin-cli -named analyzepsbt psbt=$psbtalicefirma |jq
+psbtbobfirma=$(bitcoin-cli -rpcwallet=Bob walletprocesspsbt $psbt | jq -r '.psbt')
+bitcoin-cli -named analyzepsbt psbt=$psbtbobfirma |jq
+
+echo -e "\e[33mPSBT Alice:\e[0m $psbtalicefirma"
+echo -e "\e[33mPSBT Bob:\e[0m $psbtbobfirma"
+
+sleep 5
+
+echo -e "\e[33mCombinando firmas...\e[0m"
+
+psbtcombinada=$(bitcoin-cli combinepsbt '''["'$psbtalicefirma'", "'$psbtbobfirma'"]''')
+bitcoin-cli -named analyzepsbt psbt=$psbtcombinada |jq
+psbt_hex=$(bitcoin-cli finalizepsbt $psbtcombinada | jq -r '.hex')
+txpsbt=$(bitcoin-cli -named sendrawtransaction hexstring=$psbt_hex)
+
+echo -e "\e[33mPSBT Combinada:\e[0m $txpsbt"
+
+sleep 5
+
+####5.Confirmar el saldo mediante la minería de algunos bloques adicionales.
+
+echo -e "\e[36m5.Minando bloques adicionales para confirmar la tx...\e[0m"
+
+bitcoin-cli generatetoaddress 3 "$adminer"
+
+sleep 5
+
+####6.Imprimir los saldos finales de Alice y Bob.
+
+saldoalicefinal=`bitcoin-cli -rpcwallet=Alice getbalance`
+saldobobfinal=`bitcoin-cli -rpcwallet=Bob getbalance`
+
+echo -e "\e[33mSaldo final Alice:\e[0m $saldoalicefinal"
+echo -e "\e[33mSaldo final Bob:\e[0m $saldobobfinal"
+
+sleep 5
+
+echo -e ""
+echo -e "\e[35mFinalizando... :)\e[0m"
+echo -e ""
