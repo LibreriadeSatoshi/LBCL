@@ -82,9 +82,9 @@ EOF
 clean() {
 
     echo "Deteniendo el servicio y borrando la configuración"
-    #killall bitcoind
-    #sleep 1
-    #rm -fr ~/.bitcoin
+    killall bitcoind
+    sleep 1
+    rm -fr ~/.bitcoin
     kill -s TERM $$
 }
 
