@@ -33,7 +33,7 @@ En el siguiente ejercicio, pasaremos por un flujo de trabajo en el que un emplea
 Ejemplos útiles de scripts de bash: https://linuxhint.com/30_bash_script_examples/
 Ejemplos útiles de uso de jq: https://www.baeldung.com/linux/jq-command-json
 Usar jq para crear JSON: https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/
-Cómo crear una solicitud de extracción a través de un navegador web: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-requestavegador web: [https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
+Cómo crear una solicitud de extracción a través de un navegador web: [https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
 
 ===========================================================================================
 
