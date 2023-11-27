@@ -1,26 +1,22 @@
 # Enunciado del Problema
 
-Los timelocks son mecanismos para crear transacciones que están bloqueadas hasta que haya pasado X unidades de tiempo. Estas transacciones no pueden incluirse en el bloque hasta que haya transcurrido el tiempo especificado. Esto puede ser útil para varios tipos de situaciones de flujo de transacciones en las que los fondos están bloqueados de manera segura.
-`OP_RETURN` es un código de operación que se puede utilizar para grabar datos aleatorios en una transacción. Esto tiene diversos usos, desde la marca de tiempo hasta los NFT (Tokens No Fungibles) basados en Bitcoin.
-En el siguiente ejercicio, pasaremos por un flujo de trabajo en el que un empleado recibe su salario de un empleador, pero solo después de que haya transcurrido cierto tiempo. El empleado también lo celebra y realiza un gasto de `OP_RETURN` para que todo el mundo sepa que ya no está desempleado.
+Los timelocks relativos se utilizan para crear bloqueos específicos para una entrada. Utilizando timelocks relativos, una transacción puede estar bloqueada hasta cierto número de bloques desde el bloque en el que se ha minado la entrada a la que se hace referencia.
+
+El ejercicio a continuación demuestra el uso de un timelock relativo.
 
 ## Escribe un script de bash para:
 
-#### Configurar un contrato Timelock
+#### Configurar un timelock relativo
+1. Crear dos billeteras: `Miner`, `Alice`.
+2. Fondear las billeteras generando algunos bloques para `Miner` y enviando algunas monedas a `Alice`.
+3. Confirmar la transacción y chequar que `Alice` tiene un saldo positivo.
+4. Crear una transacción en la que `Alice` pague 10 BTC al `Miner`, pero con un timelock relativo de 10 bloques.
+5. Informar en la salida del terminal qué sucede cuando intentas difundir la segunda transacción.
 
-1. Crea tres monederos: `Miner`, `Empleado` y `Empleador`.
-2. Fondea los monederos generando algunos bloques para `Miner` y enviando algunas monedas al `Empleador`.
-3. Crea una transacción de salario de 40 BTC, donde el `Empleador` paga al `Empleado`.
-4. Agrega un timelock absoluto de 500 bloques para la transacción, es decir, la transacción no puede incluirse en el bloque hasta que se haya minado el bloque 500.
-5. Informa en un comentario qué sucede cuando intentas transmitir esta transacción.
-6. Mina hasta el bloque 500 y transmite la transacción.
-7. Imprime los saldos finales del `Empleado` y `Empleador`.
-
-#### Gastar desde el Timelock
-1. Crea una transacción de gasto en la que el `Empleado` gaste los fondos a una nueva dirección de monedero del `Empleado`.
-2. Agrega una salida `OP_RETURN` en la transacción de gasto con los datos de cadena `"He recibido mi salario, ahora soy rico"`.
-3. Extrae y transmite la transacción completamente firmada.
-4. Imprime los saldos finales del `Empleado` y `Empleador`.
+#### Gastar desde el timelock relativo
+1. Generar 10 bloques adicionales.
+2. Difundir la segunda transacción. Confirmarla generando un bloque más.
+3. Informar el saldo de `Alice`.
 
 ## Entrega
 - Crea un script de bash con tu solución para todo el ejercicio.
@@ -39,34 +35,35 @@ Cómo crear una solicitud de extracción a través de un navegador web: https://
 
 # Problem Statement
 
-Timelocks are mechanisms to create transactions that are locked until X unit of time. These transactions cannot be included in the block until the said time has passed. This can be useful for various types of transaction workflow situations where funds are locked trustlessly.
-`OP_RETURN` is an OP code that can be used to etch random data into a transaction. This has various use, from timestamping to Bitcoin-based NFTs.
-In the following exercise, we go through a workflow where an `Employee` is getting paid by an `Employer` but only after a certain time has passed. The employee also exclaims in joy and post a OP_RETURN spend for the whole world to see that he isn't jobless anymore.
+Relative timelocks are used to make input-specific locks. Using relative timelock, a transaction can be locked up to a certain number of blocks since the block in which the input it is referring to has been mined.
+
+The exercise below demonstrates using a relative timelock spend.
 
 ## Write a bash script to:
 
-#### Setup a TimeLock contract
-1. Create three wallets: `Miner`, `Employee`, and `Employer`.
-2. Fund the wallets by generating some blocks for `Miner` and sending some coins to `Employer`.
-3. Create a salary transaction of 40 BTC, where the `Employer` pays the `Employee`.
-4. Add an absolute timelock of 500 Blocks for the transaction, i.e. the transaction cannot be included in the blockchain until the 500th block is mined.
-5. Report in a comment what happens when you try to broadcast this transaction.
-6. Mine up to 500th block and broadcast the transaction.
-7. Print the final balances of `Employee` and `Employer`.
+#### Setup a relative timelock
 
-#### Spend from the TimeLock
-1. Create a spending transaction where the `Employee` spends the fund to a new `Employee` wallet address.
-2. Add an `OP_RETURN` output in the spending transaction with the string data "I got my salary, I am rich".
-3. Extract and broadcast the fully signed transaction.
-4. Print the final balances of the `Employee` and `Employer`.
+1. Create two wallets: `Miner`, `Alice`.
+2. Fund the wallets by generating some blocks for `Miner` and sending some coins to `Alice`.
+3. Confirm the transaction and assert that `Alice` has a positive balance.
+4. Create a transaction where `Alice` pays 10 BTC back to `Miner`, but with a relative timelock of 10 blocks.
+5. Report in the terminal output what happens when you try to broadcast the 2nd transaction.
+#### Spend from relative timeLock
+
+1. Generate 10 more blocks.
+2. Broadcast the 2nd transaction. Confirm it by generating one more block.
+3. Report Balance of `Alice`.
 
 ## Submission
+
 - Create a bash script with your solution for the entire exercise.
 - Save the script in the provided solution folder with the name `<your-discord-name>.sh`.
 - Create a pull request to add the new file to the solution folder.
 - The script must include all the exercise steps, but you can also add your own scripting improvements or enhancements.
+- The best script of the week will be showcased in the discord `shell-showcase` channel.
 
 ## Resources
+
 - Useful bash script examples: [https://linuxhint.com/30_bash_script_examples/](https://linuxhint.com/30_bash_script_examples/)
 - Useful `jq` examples: [https://www.baeldung.com/linux/jq-command-json](https://www.baeldung.com/linux/jq-command-json)
 - Use `jq` to create JSON: [https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/](https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/)
