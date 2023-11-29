@@ -198,18 +198,24 @@ install_node() {
 # $2 - wallet_name ex. "Mining Reward"
 # create_wallet_and_mine_to_address "Miner" "Mining Reward"
 create_wallet_and_mine_to_address() {
-    bitcoin-cli -named createwallet wallet_name=$1 descriptors=true
+    WALLET_NAME="Miner"
+    ADDRESS_NAME="Mining Reward"
 
-    success_flag "$1 wallet created"
-    ADDRESS=$(create_new_address $1 "$2")
-    success_flag "created address on wallet $1 label $2"
+    bitcoin-cli -named createwallet wallet_name=$WALLET_NAME descriptors=true
+    sleep 2
+    success_flag "$WALLET_NAME wallet created"
+
+    ADDRESS=$(create_new_address $WALLET_NAME "$ADDRESS_NAME")
+    sleep 2
+
+    success_flag "created address on wallet $WALLET_NAME label $ADDRESS_NAME"
     info_flag "address: $ADDRESS" 
 
-    info_flag "get pubkey on wallet $1 address $ADDRESS"
-    PUB_KEY=$(get_address_public_key $1 $ADDRESS)
+    info_flag "get pubkey on wallet $WALLET_NAME address $ADDRESS"
+    PUB_KEY=$(get_address_public_key $WALLET_NAME $ADDRESS)
     info_flag $PUB_KEY
 
-    mine_to_address_until_more_than_x $1 $ADDRESS 99
+    mine_to_address_until_more_than_x $WALLET_NAME $ADDRESS 99
 }
 
 # $1 - wallet_name ex. "Miner"
@@ -703,6 +709,76 @@ week_4() {
     success_flag "$EMPLOYER balance is $EMPLOYER_BALANCE and $EMPLOYEE balance is $EMPLOYEE_BALANCE"
 }
 
+week_5() {
+    MINER="Miner"
+    ALICE="Alice"
+
+    MINER_ADDRESS=$(get_address_by_label "Miner" "Mining Reward")
+
+    section_flag "xwazzo: Week 4 solution"
+
+    info_flag "1. Crear dos billeteras: 'Miner', 'Alice'."
+    create_wallet "$ALICE"
+    success_flag "$ALICE wallet created"
+
+    MINER_BALANCE=$(bitcoin-cli -rpcwallet=$MINER getbalance)
+    success_flag "$MINER balance is $MINER_BALANCE"
+
+    ALICE_ADDRESS=$(create_new_address $ALICE "$ALICE address")
+
+    info_flag "2. Fondear las billeteras generando algunos bloques para 'Miner' y enviando algunas monedas a 'Alice'."
+
+    SENT_TO_ALICE=30
+    ALICE_TXID=$(bitcoin-cli -rpcwallet=$MINER sendtoaddress $ALICE_ADDRESS $SENT_TO_ALICE)
+
+    # transaction confirmation
+    bitcoin-cli -rpcwallet="Miner" generatetoaddress 1 "$MINER_ADDRESS"
+
+    info_flag "3. Confirmar la transacción y chequar que 'Alice' tiene un saldo positivo."
+    ALICE_BALANCE=$(get_wallet_balance $ALICE)
+
+    info_flag "$ALICE balance $ALICE_BALANCE"
+
+    info_flag "4. Crear una transacción en la que 'Alice' pague 10 BTC al 'Miner', pero con un timelock relativo de 10 bloques."
+
+    ALICE_BLOCK=$(bitcoin-cli -rpcwallet=$ALICE listunspent | jq -r '.[0] | {"txid": .txid, "vout": .vout, "sequence": 10}')
+
+    PAY_TO_MINER=10
+    FEE=0.00000350
+    ALICE_CHANGE=$(echo $SENT_TO_ALICE - $PAY_TO_MINER - $FEE | bc)
+    BLOCK_COUNT=$(bitcoin-cli getblockcount)
+    LOCKTIME=$(echo $BLOCK_COUNT + 100 | bc)
+
+    ALICE_CHANGE_ADDRESS=$(create_raw_change_address "$ALICE")
+    info_flag "$ALICE: raw change address $ALICE_CHANGE_ADDRESS"
+
+    RAW_TRX=$(bitcoin-cli -named createrawtransaction inputs="[$ALICE_BLOCK]" outputs="[{\"$MINER_ADDRESS\": $PAY_TO_MINER},{\"$ALICE_CHANGE_ADDRESS\": $ALICE_CHANGE}]")
+
+    info_flag "5. Informar en la salida del terminal qué sucede cuando intentas difundir la segunda transacción."
+    SIGNED_RAW_TRX=$(bitcoin-cli -rpcwallet="$ALICE" signrawtransactionwithwallet "$RAW_TRX")
+
+    bitcoin-cli sendrawtransaction $(echo $SIGNED_RAW_TRX | jq -r .hex)
+
+    error_flag "Error: No podemos transmitir la trasacción"
+    info_flag "El error ocurre porque no está permitido enviar una transacción con un locktime futuro, únicamente los que están a punto de ser válidos por el numero de bloques."
+
+    info_flag "1. Generar 10 bloques adicionales."
+    bitcoin-cli -rpcwallet=$MINER generatetoaddress 10 "$MINER_ADDRESS"
+
+    info_flag "2. Difundir la segunda transacción. Confirmarla generando un bloque más."
+    bitcoin-cli sendrawtransaction $(echo $SIGNED_RAW_TRX | jq -r .hex)
+
+    DECODE_RAW_TRX=$(bitcoin-cli decoderawtransaction $RAW_TRX)
+
+    bitcoin-cli -rpcwallet=$MINER generatetoaddress 1 "$MINER_ADDRESS"
+
+    info_flag "3. Informar el saldo de Alice."
+    MINER_BALANCE=$(get_wallet_balance $MINER)
+    ALICE_BALANCE=$(get_wallet_balance $ALICE)
+
+    success_flag "$ALICE balance is $ALICE_BALANCE"
+}
+
 run_program() {
     install_dependencies
     sleep 2
@@ -710,9 +786,9 @@ run_program() {
     sleep 2
     start_node
     sleep 2
-    create_wallet_and_mine_to_address "Miner" "Mining Reward"
+    create_wallet_and_mine_to_address
     sleep 2
-    week_4
+    week_5
 }
 
 run_program
