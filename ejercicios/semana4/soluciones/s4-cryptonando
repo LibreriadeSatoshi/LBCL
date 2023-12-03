@@ -1,0 +1,247 @@
+#!/bin/bash
+
+# Ejercicio semana 4 
+# Timelock + OP_RETURN 
+#
+#
+#Colours
+greenC="\e[0;32m\033[1m"
+endC="\033[0m\e[0m"
+redC="\e[0;31m\033[1m"
+blueC="\e[0;34m\033[1m"
+yellowC="\e[0;33m\033[1m"
+purpleC="\e[0;35m\033[1m"
+turquoiseC="\e[0;36m\033[1m"
+grayC="\e[0;37m\033[1m"
+
+functionClean(){
+   clear
+   echo -e "${blueC}[!] ${endC}${yellowC}Stopping Bitcoin Core${endC}"
+   bitcoin-cli stop > /dev/null 
+   rm -r -f ~/.bitcoin/regtest/
+   sleep 7
+}
+
+functionStart(){
+   echo -e "${blueC}[+] ${endC}${grayC}Restarting Bitcoin Core${endC}"
+   bitcoind -daemon
+   echo -e "${blueC}$(bitcoind --version | grep version)${endC}"
+   sleep 3
+   clear
+   echo -e "${blueC}[+] ${endC}${grayC}Blockchain: ${endC}${greenC}\t\t\t\t$(bitcoin-cli getblockchaininfo | jq -r .chain ) ${endC}"
+}
+# ---------------------------------------------
+# Crear tres wallets para Miner, Jefe y Empleado 
+# ---------------------------------------------
+functionCreaWallet(){
+   echo -e "${blueC}[+] ${endC}${grayC}Creando wallets Miner, Empleado y Jefe... ${endC}"
+   bitcoin-cli -named createwallet wallet_name="Miner" descriptors=true > /dev/null
+   bitcoin-cli -named createwallet wallet_name="Empleado" descriptors=true > /dev/null
+   bitcoin-cli -named createwallet wallet_name="Jefe" descriptors=true > /dev/null
+}
+# ---------------------------------------------
+# Crear direcciones para las 3 wallets 
+# ---------------------------------------------
+fuctionNewAddress(){
+   walletAddressMiner=$(bitcoin-cli -rpcwallet=Miner getnewaddress "Wallet recompensa de mineria")
+   walletAddressEmpleado=$(bitcoin-cli -rpcwallet=Empleado getnewaddress "Wallet del Empleado")
+   walletAddressJefe=$(bitcoin-cli -rpcwallet=Jefe getnewaddress "Wallet del Jefe")
+
+
+   echo -e "\n${blueC}[+] ${endC}${grayC}Direccion Wallet Miner:   \t\t\t${endC}${greenC}$walletAddressMiner ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Direccion Wallet Empleado:\t\t\t${endC}${greenC}$walletAddressEmpleado ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Direccion Wallet Jefe:    \t\t\t${endC}${greenC}$walletAddressJefe ${endC}"
+}
+# ---------------------------------------------
+# Funcion que Mina 103 bloques
+# ---------------------------------------------
+
+functionMining(){
+   echo -e "${blueC}[!] ${endC}${redC}Minando... ${endC}"
+   bitcoin-cli generatetoaddress 103 ${walletAddressMiner} > /dev/null
+   alturaBloque=$(bitcoin-cli getblockchaininfo | grep "blocks" | awk '{print $2}' | tr ',' ' ')
+   echo -e "${blueC}[+] ${endC}${grayC}Altura de bloque:         \t\t\t${endC}${greenC}$alturaBloque${endC}"
+}
+# ---------------------------------------------
+# Transaccion 1: El Minero paga al Jefe 40 bitcoin
+# ---------------------------------------------
+
+functionMinerJefe(){
+   balanceMiner=$(bitcoin-cli -rpcwallet=Miner getbalance | bc)
+   balanceJefe=$(bitcoin-cli -rpcwallet=Jefe getbalance | bc)
+   echo -e "\n${blueC}[+] ${endC}${grayC}Preparando transaccion: Miner envia 45 BTC al Jefe  ${endC}"
+   echo -e   "${blueC}[+] ${endC}${grayC}Saldo en la wallet del Miner: \t\t${endC}${greenC}$balanceMiner${endC}"
+   echo -e   "${blueC}[+] ${endC}${grayC}Saldo en la wallet del Jefe: \t\t${endC}${greenC}$balanceJefe${endC}"
+
+   # Transaccion: El Miner envia 45 bitcoin al Jefe
+   txidMinerJefe=$(bitcoin-cli -rpcwallet=Miner sendtoaddress "$walletAddressJefe" 45)
+   # 40 bitcoin enviados
+   balanceMiner=$(bitcoin-cli -rpcwallet=Miner getbalance | bc)
+   balanceJefe=$(bitcoin-cli -rpcwallet=Jefe getbalance | bc)
+   txMinerJefe=$(bitcoin-cli -rpcwallet=Miner gettransaction $txidMinerJefe)
+
+
+   echo -e "\n${blueC}[+] ${endC}${grayC}Comprobando envio de 40 BTC al Jefe...${endC}"
+   sleep 1
+   echo -e "${blueC}[+] ${endC}${grayC}Hash de transaccion           \t\t${endC}${greenC}$txidMinerJefe${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Saldo en la wallet del Miner: \t\t${endC}${greenC}$balanceMiner${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Esperando que se mine 1 bloque...${endC}"
+   echo -e "${blueC}[!] ${endC}${redC}Minando... ${endC}"
+   #
+   bitcoin-cli generatetoaddress 1 ${walletAddressMiner} > /dev/null
+   #
+
+   txMinerJefe=$(bitcoin-cli -rpcwallet=Miner gettransaction $txidMinerJefe)
+   balanceJefe=$(bitcoin-cli -rpcwallet=Jefe getbalance | bc)
+   confirmationsTxMinerJefe=$(echo $txMinerJefe | jq .confirmations )
+   echo -e "${blueC}[+] ${endC}${grayC}Confirmaciones:               \t\t${endC}${greenC}$confirmationsTxMinerJefe${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Saldo en la wallet del Jefe:  \t\t${endC}${greenC}$balanceJefe${endC}"
+}
+# ---------------------------------------------
+# El Jefe paga al empleado 40 bitcoin utilizando un bloqueo de tiempo Lock Time de 500 bloques
+# ---------------------------------------------
+
+functionSueldo(){
+   echo -e "\n${blueC}[+] ${endC}${grayC}Preparando transaccion sueldo: El Jefe paga al empleado 40 BTC  ${endC}"
+# Obteniendo datos del jefe para crear TX RAW
+# Creando TX Raw
+# verificando con decode 
+# firmando
+# transmitiendo
+ 
+  unspentJefe=$(bitcoin-cli -rpcwallet=Jefe listunspent)
+  txidJefe0=$(bitcoin-cli -rpcwallet=Jefe listunspent | jq -r '.[0] | .txid')
+  voutJefe0=$(bitcoin-cli -rpcwallet=Jefe listunspent | jq -r '.[0] | .vout')
+  amountJefe0=$(bitcoin-cli -rpcwallet=Jefe listunspent | jq -r '.[0] | .amount')
+
+  JefePagaRawTxHex=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txidJefe0'", "vout": '$voutJefe0' } ]''' outputs='''{ "'$walletAddressEmpleado'": 40, "'$walletAddressJefe'": 4.9999 }''' locktime=504 )
+  JefePagaRawtxDec=$(bitcoin-cli decoderawtransaction $JefePagaRawTxHex)
+  JefePagaTxFirma=$(bitcoin-cli -rpcwallet=Jefe signrawtransactionwithwallet $JefePagaRawTxHex | jq -r '.hex')
+
+  echo -e "${blueC}[+] ${endC}${grayC}Utxos del Jefe: ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Amount: ${endC}              \t\t\t${greenC}$amountJefe0${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Txid: ${endC}                \t\t\t${greenC}$txidJefe0${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Utxo Vout: ${endC}           \t\t\t${greenC}$voutJefe0${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Address del empleado: ${endC}\t\t\t${greenC}$walletAddressEmpleado${endC}"
+#  echo -e "\n${blueC}[+] ${endC}${grayC}Listando transaccion Exadecimal en crudo: ${endC}"
+#  echo -e "\n${yellowC}$JefePagaRawTxHex${endC}"
+   echo -e "\n${blueC}[+] ${endC}${grayC}Listando transaccion decodificada: ${endC}"
+   echo -e "\n${yellowC}$JefePagaRawtxDec${endC}"
+#  echo -e "\n${blueC}[+] ${endC}${grayC}Listando transaccion Firmada: ${endC}"
+#  echo -e "\n${yellowC}$JefePagaTxFirma${endC}"
+#  echo -e "\n${blueC}[+] ${endC}${grayC}Listando ID de la transaccion: ${endC}"
+#  echo -e "\n${yellowC} $txidJefe ${endC}"
+   echo -e "\n${blueC}[+] ${endC}${grayC}Enviando la transaccion con timelock: ${endC}"
+   sleep 1
+   txidJefe=$(bitcoin-cli sendrawtransaction $JefePagaTxFirma)
+   echo "$txidJefe"
+   echo -e "${blueC}[!] ${endC}${redC}Error: ${endC}${grayC}El nodo rechaza la transaccion porque esta bloqueada por el locktime. Espera.${endC}"
+ 
+ }
+# ---------------------------------------------
+# Minamos unos cuantos bloques mas hasta superar lo 500 bloques del lock time 
+# ---------------------------------------------
+
+
+ function500Blocks(){ 
+   functionMining
+   functionMining
+   functionMining
+   functionMining
+ }
+
+# ---------------------------------------------
+# Pasaron los 500 bloques, reenviamos la transaccion 
+# ---------------------------------------------
+
+ functionReenvio(){
+   echo -e "\n${blueC}[+] ${endC}${grayC}Reenviando la transaccion luego de los ~500 bloques de locktime  ${endC}"
+   txidJefe=$(bitcoin-cli sendrawtransaction $JefePagaTxFirma)
+   bitcoin-cli generatetoaddress 1 ${walletAddressMiner} > /dev/null
+   balanceEmpleado=$(bitcoin-cli -rpcwallet=Empleado getbalance | bc)
+
+   echo -e "\n${blueC}[+] ${endC}${grayC}Reenviando la transaccion con locktime: ${endC}\t${greenC}txidJefe${endC}"
+   sleep 1
+   echo -e "${blueC}[+] ${endC}${grayC}Transacion enviada con exito ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Espera 1 bloque para confirmar la transaccion ${endC}"
+   echo -e "${blueC}[!] ${endC}${redC}Minando...${endC}"
+   sleep 1
+   echo -e "${blueC}[+] ${endC}${grayC}Transaccion realizada con exito ${endC}"
+   echo -e "${blueC}[!] ${endC}${grayC}Saldo del empleado despues del locktime: ${endC}\t${greenC}$balanceEmpleado${endC}"
+
+ }
+# ---------------------------------------------
+# Ahora que el empleado recibio los 40 bitcoin, 
+# reenvia la transaccion a una nueva direccion
+# y escribe un mensaje usando OP_RETURN
+# ---------------------------------------------
+
+ functionMessage(){
+   echo -e "\n${blueC}[+] ${endC}${grayC}El Empleado envia su sueldo con mensaje a la Hardware Wallet ${endC}"
+   unspentEmp=$(bitcoin-cli -rpcwallet=Empleado listunspent)
+   txidEmp=$(bitcoin-cli -rpcwallet=Empleado listunspent | jq -r '.[0] | .txid')
+   voutEmp=$(bitcoin-cli -rpcwallet=Empleado listunspent | jq -r '.[0] | .vout')
+   amountEmp=$(bitcoin-cli -rpcwallet=Empleado listunspent | jq -r '.[0] | .amount')
+   sendMessage=$(echo "Stacking Sats en el Bunker Digital" | xxd -p -c 1000000)
+   sendMessageDecoded=$(echo "$sendMessage" | xxd -r -p)
+   hardwareWalletEmpleado=$(bitcoin-cli -rpcwallet=Empleado getnewaddress "Hardware Wallet")
+
+   EmpRawTxHex=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txidEmp'", "vout": '$voutEmp' } ]''' outputs='''{ "data": "'$sendMessage'", "'$hardwareWalletEmpleado'": 39.999995 }''')
+
+   EmpPagaRawtxDec=$(bitcoin-cli decoderawtransaction $EmpRawTxHex)
+   EmpPagaTxFirma=$(bitcoin-cli -rpcwallet=Empleado signrawtransactionwithwallet $EmpRawTxHex | jq -r '.hex')
+   txidEmpleado=$(bitcoin-cli sendrawtransaction $EmpPagaTxFirma)
+
+   echo -e "\n${blueC}[+] ${endC}${grayC}UTXO en Wallet del Empleado: ${endC}\n${yellowC}$unspentEmp${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Mensaje incluido en la transaccion: \t\t${endC}${greenC}$sendMessageDecoded${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Direccion Hardware Wallet :    \t\t\t${endC}${greenC}$hardwareWalletEmpleado ${endC}"
+#  echo -e "${blueC}[+] ${endC}${grayC}Transaccion cruda:\n${endC}${yellowC}$EmpRawTxHex ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Transaccion decodificada:\n${endC}${yellowC}$EmpPagaRawtxDec ${endC}"
+#  echo -e "${blueC}[+] ${endC}${grayC}Transaccion firmada:\n${endC}${yellowC}$EmpPagaTxFirmac ${endC}"
+   echo "--- --- -- -- --- --- -- -- --- --- -- -- --- --- -- -- --- ---"
+#
+# Mensaje enviado, ahora mina unos bloques mas para confirmar la transaccion
+#
+   functionMining
+#
+# Verificando el mensaje en la tx y mostrando los resultados
+#
+   unspentEmp=$(bitcoin-cli -rpcwallet=Empleado listunspent)
+   msgListUnspent=$(bitcoin-cli -rpcwallet=Empleado listunspent | jq -r '.[0].txid')
+   msgGetTxHex=$(bitcoin-cli -rpcwallet=Empleado gettransaction $msgListUnspent | jq -r .hex)
+   msgTxAmount=$(bitcoin-cli -rpcwallet=Empleado gettransaction $msgListUnspent | jq -r .details[2].amount)
+   msgCoded=$(bitcoin-cli decoderawtransaction $msgGetTxHex | jq -r  .vout[0].scriptPubKey.asm | awk '{print $2}')
+   msgDecoded=$(echo "$msgCoded" | xxd -r -p)
+
+   echo -e "${blueC}[+] ${endC}${grayC}Comprobando transaccion y mensaje incluido ${endC}"
+#  echo -e "${blueC}[+] ${endC}${grayC}Analizando la Wallet del Empleado:  \t${endC}${yellowC}$unspentEmp ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Txid:                               \t${endC}${greenC}$msgListUnspent ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Saldo en Hardware Wallet            \t${endC}${greenC}$msgTxAmount ${endC}"
+#  echo -e "${blueC}[+] ${endC}${grayC}Raw Tx:                             \t${endC}${yellowC}$msgGetTxHex ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}OP_RETURN Hexadecimal:              \t${endC}${greenC}$msgCoded ${endC}"
+   echo -e "${blueC}[+] ${endC}${grayC}Mensaje OP Return en la Transaccion:\t${endC}${greenC}$msgDecoded ${endC}"
+
+ }
+
+
+functionClean
+sleep 1
+functionStart
+sleep 1
+functionCreaWallet
+sleep 1
+fuctionNewAddress
+sleep 1 
+functionMining
+sleep 1
+functionMinerJefe
+sleep 1 
+functionSueldo
+sleep 2
+function500Blocks
+sleep 1
+functionReenvio
+sleep 1
+functionMessage
+sleep 1
+echo "--- --- -- -- --- --- -- -- --- --- -- -- --- --- -- -- --- ---"

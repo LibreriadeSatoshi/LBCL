@@ -1,0 +1,83 @@
+# Starts bitcoin core creating all necessary resources
+admin@raspibolt:~$ sudo nano /home/admin/.bitcoin/bitcoin.conf
+  print_info "Creating bitcoin.conf in regtest mode..."
+cat <<EOF >/root/.bitcoin/bitcoin.conf
+    regtest=1
+    fallbackfee=0.0001
+    server=1
+    txindex=1
+
+admin@raspibolt:~$ sudo systemctl start bitcoind
+
+# Create all wallets ("Miner" and "Trader")
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli createwallet "Miner"
+{
+  "name": "Miner"
+}
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli createwallet "Trader"
+{
+  "name": "Trader"
+}
+
+
+# Generate an address 
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Miner" getnewaddress "Recompensa de Minería"
+bcrt1qsnt4gaml7yuq9fmt8qqq5rfeqdtje9hdkfkusu
+
+# Mine a given number of blocks
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli generatetoaddress 1 bcrt1qsnt4gaml7yuq9fmt8qqq5rfeqdtje9hdkfkusu
+[
+  "7823b1e4c3c73e59e2d33ebed0dfbe5f2b9eb182e4cbc8c29df4bd7b050080e5"
+]
+
+# Prints the balance of a wallet
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Miner" getbalance
+150.00000000
+
+# Sends funds to an address 
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Trader" getnewaddress "Recibido"
+bcrt1qev2fq72felpkumgsz8rltkq9esz6g3lrjjajll
+
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Miner" sendtoaddress bcrt1qev2fq72felpkumgsz8rltkq9esz6g3lrjjajll 20
+27669c72868781ccdd8f58feb596de921a9853a84143906f54870457c22d5c52
+
+# Looks for a transaction in the mempool.
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Miner" getmempoolentry 27669c72868781ccdd8f58feb596de921a9853a84143906f54870457c22d5c52
+error code: -5
+error message:
+Transaction not in mempool
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli generatetoaddress 1 bcrt1qsnt4gaml7yuq9fmt8qqq5rfeqdtje9hdkfkusu
+[
+  "73bfc2408f4063b9530fa3e4a8cfbaf63468b1aa6658352b16e6c4f20b1cc603"
+]
+
+# Prints a detailed transaction data
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Miner" gettransaction 27669c72868781ccdd8f58feb596de921a9853a84143906f54870457c22d5c52
+{
+  "amount": -20.00000000,
+  "fee": -0.00001410,
+  "confirmations": 0,
+  "trusted": false,
+  "txid": "27669c72868781ccdd8f58feb596de921a9853a84143906f54870457c22d5c52",
+  "wtxid": "19d7f9b922fa29b78f9420b564bcfc458f478d90eec4460d20eeeed403ba2e33",
+  "walletconflicts": [
+  ],
+  "time": 1698929537,
+  "timereceived": 1698929537,
+  "bip125-replaceable": "yes",
+  "details": [
+    {
+      "address": "bcrt1qev2fq72felpkumgsz8rltkq9esz6g3lrjjajll",
+      "category": "send",
+      "amount": -20.00000000,
+      "vout": 0,
+      "fee": -0.00001410,
+      "abandoned": false
+    }
+  ],
+  "hex": "02000000000101afb67699997feed1d9c03a06a080d82f2d3ff8d73e0983944b52ad87e6207df00000000000fdffffff020094357700000000160014cb14907949cfc36e6d1011c7f5d805cc05a447e37e58d0b20000000016001479c27e4229445e9d1f4d6a62a5ac3aa29c3f79f6024730440220672c4d932a04d1dc40c2708b953715e8346fc46b4a141228af132e93dbfec44302206975480dbe9ec7947e80e0a951fe0348dc5d31730259aef828e518008d05218f012102915a25daaf22435fb373d0ab79ca033521a68006654665231cd9b4f0e3c4f4c168000000"
+}
+admin@raspibolt:~$ sudo -u bitcoin bitcoin-cli -rpcwallet="Miner" getbalance
+sudo -u bitcoin bitcoin-cli -rpcwallet="Trader" getbalance
+150.00000000
+0.00000000

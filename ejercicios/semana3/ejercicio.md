@@ -10,7 +10,10 @@ En este ejercicio, nuestro objetivo es simular una transferencia básica de acci
 ## Escribe un script de bash para:
 
 #### Configurar Multisig
-1. Crear tres monederos: `Miner`, `Alice` y `Bob`.
+1. Crear tres monederos: `Miner`, `Alice` y `Bob`. Es importante usar billeteras sin descriptores, ya que sino lo hacemos, nos encontraremos con problemas al usar la opción de bitcoin-cli addmultisigaddress.
+    ``` 
+	 bitcoin-cli -regtest -named createwallet wallet_name=Bob descriptors=false
+    ``` 
 2. Fondear los monederos generando algunos bloques para `Miner` y enviando algunas monedas a `Alice` y `Bob`.
 3. Crear una dirección Multisig 2-de-2 combinando las claves públicas de `Alice` y `Bob`.
 4. Crear una Transacción Bitcoin Parcialmente Firmada (PSBT) para financiar la dirección multisig con 20 BTC, tomando 10 BTC de Alice y 10 BTC de Bob, y proporcionando el cambio correcto a cada uno de ellos.
@@ -38,7 +41,7 @@ Es obligatorio que se reflejen los pasos del ejercicio, pero siéntete libre de 
 - Ejemplos útiles de `jq`:  [https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/](https://spin.atomicobject.com/2021/06/08/jq-creating-updating-json/)
 - Cómo crear una solicitud de colaboración en Github a través del navegador web: [https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
 
-======================================================================================================
+============================================================================================
 
 # Problem Statement
 
