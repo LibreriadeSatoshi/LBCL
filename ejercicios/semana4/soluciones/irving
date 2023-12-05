@@ -1,0 +1,379 @@
+#!/bin/bash
+
+#####5672I5976R3645V6548I5647N3297G
+
+echo -e "\e[35m********************************ACCIONES DE SEMANA 1 PARA SEMANA 4*****************************************\e[0m"
+
+bitcoin-cli stop
+
+echo -e "\e[31mCerrando Bitcoin Core para iniciar instalacion nueva, por favor espere... \e[0m"
+
+sleep 7
+
+sudo rm -r ~/.bitcoin
+
+####CONFIGURACION
+
+echo -e "\e[36m¿Que versión de bitcoin quieres instalar?[22.0, 22.1, 23.0, 23.1, 23.2, 24.0.1, 24.1, 24.2, 25.0, 25.1]\e[0m"
+#read version
+version=25.1
+
+#####Instalar paquetes recomendados
+
+sudo apt-get install -y bc jq autoconf file gcc libc-dev make g++ pkgconf re2c git libtool automake gcc xxd
+
+#####1.Descargar los binarios principales de Bitcoin desde el sitio web de Bitcoin Core https://bitcoincore.org/.
+#####Descargar Bitcoin-core
+
+echo -e "\e[34m$0 - Descargando Bitcoin\e[0m"
+
+mkdir btctemp
+
+cd btctemp
+
+BITCOIN="bitcoin-core-$version"
+BITCOINVER=`echo $BITCOIN | sed 's/bitcoin-core/bitcoin/'`
+
+wget https://bitcoincore.org/bin/$BITCOIN/$BITCOINVER-x86_64-linux-gnu.tar.gz
+#wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS.asc
+#wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS
+
+#####2. Utilizar los hashes y la firma descargados para verificar que los binarios sean correctos. Imprimir un soyrico en la terminal: "Verificación exitosa de la firma binaria".
+#####Verificacion de archivos
+
+#gpg --keyserver hkps://keys.openpgp.org --refresh-keys 
+
+#git clone https://github.com/bitcoin-core/guix.sigs
+#gpg --import guix.sigs/builder-keys/*
+
+echo -e "\e[34m$0 - Verificando Bitcoin.\e[0m"
+
+#export SHASIG=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Firma correcta"`
+#export SHACOUNT=`gpg --verify SHA256SUMS.asc SHA256SUMS	2>&1 | grep "Firma correcta" | wc -l`
+
+if [[ "$SHASIG" ]]
+then
+
+    echo -e "\e[32m$0 - VERIFICACION DE FIRMA EXITOSA: $SHACOUNT FIRMA CORRECTA ENCONTRADA\e[0m"
+    echo "$SHASIG"
+
+else
+
+	(>&2 echo -e "\e[31m$0 - ERROR EN VERIFICACION DE FIRMAS: No hay firmas verificadas para Bitcoin!\e[0m")
+
+fi
+
+#####Verificacion Bitcoin: SHA
+
+#SHACHECK=`sha256sum --ignore-missing --check SHA256SUMS 2>&1 | grep "La suma coincide"`
+
+if [ "$SHACHECK" ]
+then
+
+   echo -e "\e[32m$0 - VERIFIACION SHA EXITOSA / SHA: $SHACHECK\e[0m"
+
+else
+
+    (>&2 echo -e "\e[31m$0 - ERROR EN VERIFICACION SHA: SHA para Bitcoin no coincidió!\e[0m")
+
+fi
+
+while true; do
+
+  echo -e "\e[34mConfirma que ambas verificaciones fueron correctas, ¿Deseas continuar?\e[0m"
+
+#  read -p "[si/no]" opcion
+
+opcion=si
+
+  case "$opcion" in
+
+    no)
+
+ echo -e "\e[31m$0 Cancelado, verifique las firmas, ¡algo anda mal!\e[0m"
+
+cd .. 
+
+sudo rm -rf btctemp
+
+
+exit 1
+
+break
+      ;;
+
+    si)
+
+break
+
+      ;;
+
+    *)
+
+      echo -e "\e[34mOpción no válida. Por favor, selecciona una opción válida [si/no].\e[0m"
+
+      ;;
+
+  esac
+  
+done
+
+#####3. Copiar los binarios descargados a la carpeta /usr/local/bin/.
+#####Eliminando y copiando archivos
+
+echo -e "\e[34m$0 - Instalando Bitcoin.\e[0m"
+
+tar xzf ./$BITCOINVER-x86_64-linux-gnu.tar.gz
+
+sudo cp -r ./$BITCOINVER/bin/* /usr/local/bin/
+
+cd .. 
+
+sudo rm -rf btctemp
+
+cd /home/$USER
+
+#####INICIO
+#####1.Crear un archivo bitcoin.conf en el directorio de datos /home/<nombre-de-usuario>/.bitcoin/. Crear el directorio si no existe. Y agregar las siguientes líneas al archivo:
+
+carpeta=.bitcoin
+
+if [ ! -d "$carpeta" ] 
+then
+
+mkdir "$carpeta"
+
+echo ""
+
+else
+
+echo ""
+fi
+
+cd /home/$USER/$carpeta
+
+touch bitcoin.conf
+
+while true; do
+  echo -e "\e[36mElija el tipo de nodo:\e[0m"
+  echo "1 - Mainnet"
+  echo "2 - Testnet"
+  echo "3 - Regtest (unico disponible por lo pronto...)"
+  echo "4 - Salir"
+  
+#  read -p "Selecciona una opción (1-4): " nodo
+
+nodo=3
+
+  case "$nodo" in
+    1)
+     echo -e "\e[36mCreando bitcoin.conf para Mainnet...\e[0m"
+
+cat > bitcoin.conf <<EOF
+
+#server=1
+#txindex=1
+#daemon=1
+#pruned=0
+#rpcport=8332
+#rpcbind=0.0.0.0
+#rpcallowip=127.0.0.1
+#rpcallowip=10.0.0.0/8
+#rpcallowip=172.0.0.0/8
+#rpcallowip=192.0.0.0/8
+#zmqpubrawblock=tcp://0.0.0.0:28332
+#zmqpubrawtx=tcp://0.0.0.0:28333
+#zmqpubhashblock=tcp://0.0.0.0:28334
+#whitelist=127.0.0.1
+#peerbloomfilters=1 
+
+EOF
+
+break
+      ;;
+    2)
+      echo -e "\e[36mCreando bitcoin.conf para Testnet...\e[0m"
+
+cat > bitcoin.conf << EOF
+
+Testnet
+
+EOF
+
+break
+      ;;
+    3)
+      echo -e "\e[36mCreando bitcoin.conf para Regtest...\e[0m"
+
+cat > bitcoin.conf << EOF
+
+regtest=1
+fallbackfee=0.0001
+server=1
+txindex=1
+
+EOF
+
+break
+      ;;
+    4)
+      echo "Saliendo... Vuelva a empezar."
+      exit 1
+      ;;
+    *)
+      echo "Opción no válida. Por favor, selecciona una opción válida (1-4)."
+      ;;
+  esac
+
+done
+
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m*************************************** INICIO SEMANA 4 ******************************************\e[0m"
+
+bitcoind -daemon
+
+sleep 10
+
+####1.Crea tres monederos: Miner, Empleado y Empleador.
+
+echo -e "\e[36mCreando monederos de Miner, Empleado y Empleador...\e[0m"
+
+bitcoin-cli -named createwallet wallet_name="Miner"
+bitcoin-cli -named createwallet wallet_name="Empleado"
+bitcoin-cli -named createwallet wallet_name="Empleador"
+
+####2.Fondea los monederos generando algunos bloques para Miner y enviando algunas monedas al Empleador.
+
+echo -e "\e[36mFondeando Miner y enviando monedas a Empleador...\e[0m"
+
+
+dirminer=`bitcoin-cli -rpcwallet=Miner getnewaddress`
+bitcoin-cli generatetoaddress 103 "$dirminer"
+saldominer=`bitcoin-cli -rpcwallet=Miner getbalance`
+echo -e "\e[33mSaldo Miner:\e[0m $saldominer"
+
+dirempleador=`bitcoin-cli -rpcwallet=Empleador getnewaddress`
+echo -e "\e[33mDireccion Empleador:\e[0m $dirempleador"
+txfondempleador=`bitcoin-cli -rpcwallet=Miner sendtoaddress "$dirempleador" 100`
+
+echo -e "\e[33mFondeo Empleador:\e[0m $txfondempleador"
+bitcoin-cli generatetoaddress 1 "$dirminer"
+saldoempleador=`bitcoin-cli -rpcwallet=Empleador getbalance`
+echo -e "\e[33mSaldo Empleador:\e[0m $saldoempleador"
+
+sleep 5
+
+####3.Crea una transacción de salario de 40 BTC, donde el Empleador paga al Empleado.
+
+echo -e "\e[36mCreando transacción de salario de 40 BTC a Empleado...\e[0m"
+
+dirempleado=`bitcoin-cli -rpcwallet=Empleado getnewaddress`
+echo -e "\e[33mDireccion Empleado:\e[0m $dirempleado"
+dircambioempleador=`bitcoin-cli -rpcwallet=Empleador getnewaddress`
+
+sleep 5
+
+####4.Agrega un timelock absoluto de 500 bloques para la transacción, es decir, la transacción no puede incluirse en el bloque hasta que se haya minado el bloque 500.
+
+
+actual=`bitcoin-cli getblockcount`
+altura500=$(echo "$actual + 500" | bc)
+
+echo -e "\e[36mHaciendo transaccion dentro de 500 bloques, en el bloque $altura500...\e[0m"
+
+txidempleador=$(bitcoin-cli -rpcwallet=Empleador listunspent |jq -r '.[]| .txid')
+voutempleador=$(bitcoin-cli -rpcwallet=Empleador listunspent |jq -r '.[]| .vout')
+
+echo -e "\e[33mtxid: $txidempleador\e[0m"
+echo -e "\e[33mvout: $voutempleador\e[0m"
+
+txempleado=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txidempleador'", "vout": '${voutempleador}' } ]''' outputs=''' { "'$dirempleado'": 40 , "'$dircambioempleador'": 59.99998 } ''' locktime=$altura500)
+
+txfirmadaempleado=$(bitcoin-cli -rpcwallet=Empleador -named signrawtransactionwithwallet hexstring=$txempleado | jq -r '.hex')
+
+bitcoin-cli -named sendrawtransaction hexstring=$txfirmadaempleado 
+
+sleep 5
+
+####5.Informa en un comentario qué sucede cuando intentas transmitir esta transacción.
+
+echo -e "\e[35mSi se intenta transmitir la tx marca error por que aun no ha llegado al bloque asignado\e[0m"
+
+####6.Mina hasta el bloque 500 y transmite la transacción.
+
+echo -e "\e[36mMinando hasta llegar al bloque asignado...\e[0m"
+
+bitcoin-cli generatetoaddress 503 "$dirminer"
+
+sleep 5
+
+####7.Imprime los saldos finales del Empleado y Empleador.
+
+txfirmadaempleado=$(bitcoin-cli -rpcwallet=Empleador -named signrawtransactionwithwallet hexstring=$txempleado | jq -r '.hex')
+
+bitcoin-cli -named sendrawtransaction hexstring=$txfirmadaempleado
+
+
+bitcoin-cli generatetoaddress 1 "$dirminer"
+saldofinempleador=`bitcoin-cli -rpcwallet=Empleador getbalance`
+saldofinempleado=`bitcoin-cli -rpcwallet=Empleado getbalance`
+
+echo -e "\e[33mSaldo Final Empleador:\e[0m $saldofinempleador"
+echo -e "\e[33mSaldo Final Empleado:\e[0m $saldofinempleado"
+
+sleep 5
+
+####Gastar desde el Timelock
+
+####1.Crea una transacción de gasto en la que el Empleado gaste los fondos a una nueva dirección de monedero del Empleado.
+
+echo -e "\e[36mCreando transaccion de gasto de Empleado a Empleado...\e[0m"
+
+dirsalarioempleado=`bitcoin-cli -rpcwallet=Empleado getnewaddress`
+echo -e "\e[33mNueva direccion Empleado: $dirsalarioempleado\e[0m"
+
+####2. Agrega una salida OP_RETURN en la transacción de gasto con los datos de cadena "He recibido mi salario, ahora soy rico"."
+
+echo -e "\e[36mAgregando OP_RETURN "He recibido mi salario, ahora soy rico"...\e[0m"
+
+soyrico=$(echo -n "He recibido mi salario, ahora soy rico"|xxd -p -u)
+op_return=$(echo $soyrico| sed 's/ //g')
+
+txidempleado=$(bitcoin-cli -rpcwallet=Empleado listunspent |jq -r '.[]| .txid')
+voutempleado=$(bitcoin-cli -rpcwallet=Empleado listunspent |jq -r '.[]| .vout')
+
+echo -e "\e[33mtxid: $txidempleado\e[0m"
+echo -e "\e[33mvout: $voutempleado\e[0m"
+
+txsalarioempleado=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txidempleado'", "vout": '${voutempleado}' } ]''' outputs='''{ "data": "'$op_return'", "'$dirsalarioempleado'": 39.999998 }''')
+bitcoin-cli decoderawtransaction $txsalarioempleado |jq 
+
+sleep 3
+	
+####"3. Extrae y transmite la transacción completamente firmada."
+
+echo -e "\e[36mTransmitiendo transaccion...\e[0m"
+		
+txfirmadasalarioempleado=$(bitcoin-cli -rpcwallet=Empleado -named signrawtransactionwithwallet hexstring=$txsalarioempleado | jq -r '.hex')
+txidsalarioempleado=$(bitcoin-cli -named sendrawtransaction hexstring=$txfirmadasalarioempleado)
+echo -e "\e[33mID transaccion salario Empleado: $txidsalarioempleado\e[0m"
+
+####"4. Imprime los saldos finales del Empleado y Empleador."
+
+bitcoin-cli generatetoaddress 1 "$dirminer" | jq
+mensaje=`bitcoin-cli getrawtransaction $txidsalarioempleado 1 |jq '.vout[0]| .scriptPubKey|.asm'`
+mensajeh=$(echo $mensaje | perl -ne 's/([0-9a-f]{2})/print chr hex $1/gie' && echo '')
+saldofinalempleado=`bitcoin-cli -rpcwallet=Empleado getbalance`
+saldofinalempleador=`bitcoin-cli -rpcwallet=Empleador getbalance`
+
+echo -e "\e[33mMensaje Humano:\e[0m $mensajeh"
+echo -e "\e[33mSaldo Final Empleador:\e[0m $saldofinalempleador"
+echo -e "\e[33mSaldo Final Empleado:\e[0m $saldofinalempleado"
+
+sleep 5
+
+echo -e ""
+echo -e "\e[35mFinalizando... :)\e[0m"
+echo -e ""
