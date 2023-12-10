@@ -1,0 +1,325 @@
+#!/bin/bash
+
+#####5672I5976R3645V6548I5647N3297G
+
+echo -e "\e[35m********************************ACCIONES DE SEMANA 1 PARA SEMANA 5*****************************************\e[0m"
+
+bitcoin-cli stop
+
+echo -e "\e[31mCerrando Bitcoin Core para iniciar instalacion nueva, por favor espere... \e[0m"
+
+sleep 7
+
+sudo rm -r ~/.bitcoin
+
+####CONFIGURACION
+
+echo -e "\e[36m¿Que versión de bitcoin quieres instalar?[22.0, 22.1, 23.0, 23.1, 23.2, 24.0.1, 24.1, 24.2, 25.0, 25.1]\e[0m"
+#read version
+version=25.1
+
+#####Instalar paquetes recomendados
+
+sudo apt-get install -y bc jq autoconf file gcc libc-dev make g++ pkgconf re2c git libtool automake gcc xxd
+
+#####1.Descargar los binarios principales de Bitcoin desde el sitio web de Bitcoin Core https://bitcoincore.org/.
+#####Descargar Bitcoin-core
+
+echo -e "\e[34m$0 - Descargando Bitcoin\e[0m"
+
+mkdir btctemp
+
+cd btctemp
+
+BITCOIN="bitcoin-core-$version"
+BITCOINVER=`echo $BITCOIN | sed 's/bitcoin-core/bitcoin/'`
+
+wget https://bitcoincore.org/bin/$BITCOIN/$BITCOINVER-x86_64-linux-gnu.tar.gz
+#wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS.asc
+#wget https://bitcoincore.org/bin/$BITCOIN/SHA256SUMS
+
+#####2. Utilizar los hashes y la firma descargados para verificar que los binarios sean correctos. Imprimir un soyrico en la terminal: "Verificación exitosa de la firma binaria".
+#####Verificacion de archivos
+
+#gpg --keyserver hkps://keys.openpgp.org --refresh-keys 
+
+#git clone https://github.com/bitcoin-core/guix.sigs
+#gpg --import guix.sigs/builder-keys/*
+
+echo -e "\e[34m$0 - Verificando Bitcoin.\e[0m"
+
+#export SHASIG=`gpg --verify SHA256SUMS.asc SHA256SUMS 2>&1 | grep "Firma correcta"`
+#export SHACOUNT=`gpg --verify SHA256SUMS.asc SHA256SUMS	2>&1 | grep "Firma correcta" | wc -l`
+
+if [[ "$SHASIG" ]]
+then
+
+    echo -e "\e[32m$0 - VERIFICACION DE FIRMA EXITOSA: $SHACOUNT FIRMA CORRECTA ENCONTRADA\e[0m"
+    echo "$SHASIG"
+
+else
+
+	(>&2 echo -e "\e[31m$0 - ERROR EN VERIFICACION DE FIRMAS: No hay firmas verificadas para Bitcoin!\e[0m")
+
+fi
+
+#####Verificacion Bitcoin: SHA
+
+#SHACHECK=`sha256sum --ignore-missing --check SHA256SUMS 2>&1 | grep "La suma coincide"`
+
+if [ "$SHACHECK" ]
+then
+
+   echo -e "\e[32m$0 - VERIFIACION SHA EXITOSA / SHA: $SHACHECK\e[0m"
+
+else
+
+    (>&2 echo -e "\e[31m$0 - ERROR EN VERIFICACION SHA: SHA para Bitcoin no coincidió!\e[0m")
+
+fi
+
+while true; do
+
+  echo -e "\e[34mConfirma que ambas verificaciones fueron correctas, ¿Deseas continuar?\e[0m"
+
+#  read -p "[si/no]" opcion
+
+opcion=si
+
+  case "$opcion" in
+
+    no)
+
+ echo -e "\e[31m$0 Cancelado, verifique las firmas, ¡algo anda mal!\e[0m"
+
+cd .. 
+
+sudo rm -rf btctemp
+
+
+exit 1
+
+break
+      ;;
+
+    si)
+
+break
+
+      ;;
+
+    *)
+
+      echo -e "\e[34mOpción no válida. Por favor, selecciona una opción válida [si/no].\e[0m"
+
+      ;;
+
+  esac
+  
+done
+
+#####3. Copiar los binarios descargados a la carpeta /usr/local/bin/.
+#####Eliminando y copiando archivos
+
+echo -e "\e[34m$0 - Instalando Bitcoin.\e[0m"
+
+tar xzf ./$BITCOINVER-x86_64-linux-gnu.tar.gz
+
+sudo cp -r ./$BITCOINVER/bin/* /usr/local/bin/
+
+cd .. 
+
+sudo rm -rf btctemp
+
+cd /home/$USER
+
+#####INICIO
+#####1.Crear un archivo bitcoin.conf en el directorio de datos /home/<nombre-de-usuario>/.bitcoin/. Crear el directorio si no existe. Y agregar las siguientes líneas al archivo:
+
+carpeta=.bitcoin
+
+if [ ! -d "$carpeta" ] 
+then
+
+mkdir "$carpeta"
+
+echo ""
+
+else
+
+echo ""
+fi
+
+cd /home/$USER/$carpeta
+
+touch bitcoin.conf
+
+while true; do
+  echo -e "\e[36mElija el tipo de nodo:\e[0m"
+  echo "1 - Mainnet"
+  echo "2 - Testnet"
+  echo "3 - Regtest (unico disponible por lo pronto...)"
+  echo "4 - Salir"
+  
+#  read -p "Selecciona una opción (1-4): " nodo
+
+nodo=3
+
+  case "$nodo" in
+    1)
+     echo -e "\e[36mCreando bitcoin.conf para Mainnet...\e[0m"
+
+cat > bitcoin.conf <<EOF
+
+#server=1
+#txindex=1
+#daemon=1
+#pruned=0
+#rpcport=8332
+#rpcbind=0.0.0.0
+#rpcallowip=127.0.0.1
+#rpcallowip=10.0.0.0/8
+#rpcallowip=172.0.0.0/8
+#rpcallowip=192.0.0.0/8
+#zmqpubrawblock=tcp://0.0.0.0:28332
+#zmqpubrawtx=tcp://0.0.0.0:28333
+#zmqpubhashblock=tcp://0.0.0.0:28334
+#whitelist=127.0.0.1
+#peerbloomfilters=1 
+
+EOF
+
+break
+      ;;
+    2)
+      echo -e "\e[36mCreando bitcoin.conf para Testnet...\e[0m"
+
+cat > bitcoin.conf << EOF
+
+Testnet
+
+EOF
+
+break
+      ;;
+    3)
+      echo -e "\e[36mCreando bitcoin.conf para Regtest...\e[0m"
+
+cat > bitcoin.conf << EOF
+
+regtest=1
+fallbackfee=0.0001
+server=1
+txindex=1
+
+EOF
+
+break
+      ;;
+    4)
+      echo "Saliendo... Vuelva a empezar."
+      exit 1
+      ;;
+    *)
+      echo "Opción no válida. Por favor, selecciona una opción válida (1-4)."
+      ;;
+  esac
+
+done
+
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m**************************************************************************************************\e[0m"
+echo -e "\e[35m*************************************** INICIO SEMANA 5 ******************************************\e[0m"
+
+bitcoind -daemon
+
+sleep 10
+
+####1. Crear dos billeteras: Miner, Alice.
+
+echo -e "\e[36mCreando monederos de Miner, Alice...\e[0m"
+
+bitcoin-cli -named createwallet wallet_name="Miner"
+bitcoin-cli -named createwallet wallet_name="Alice"
+
+sleep 3
+
+####2.Fondear las billeteras generando algunos bloques para Miner y enviando algunas monedas a Alice.
+
+echo -e "\e[36mFondenado Miner y enviando a Alice...\e[0m"
+
+dirminer=`bitcoin-cli -rpcwallet=Miner getnewaddress`
+bitcoin-cli generatetoaddress 103 "$dirminer"
+saldominer=`bitcoin-cli -rpcwallet=Miner getbalance`
+echo -e "\e[33mSaldo Miner:\e[0m $saldominer"
+
+diralice=`bitcoin-cli -rpcwallet=Alice getnewaddress`
+echo -e "\e[33mDireccion Alice:\e[0m $diralice"
+txalice=`bitcoin-cli -rpcwallet=Miner sendtoaddress "$diralice" 50`
+
+sleep 3
+
+####3.Confirmar la transacción y chequar que Alice tiene un saldo positivo.
+
+echo -e "\e[36mConfirmando que Alice tiene saldo positivo...\e[0m"
+
+echo -e "\e[33mTX Alice:\e[0m $txalice"
+bitcoin-cli generatetoaddress 1 "$dirminer"
+saldoalice=`bitcoin-cli -rpcwallet=Alice getbalance`
+echo -e "\e[33mSaldo Alice:\e[0m $saldoalice"
+
+sleep 3
+
+
+####4.Crear una transacción en la que Alice pague 10 BTC al Miner, pero con un timelock relativo de 10 bloques.
+
+echo -e "\e[36mCreando transaccion de Alice a Miner de 10 BTC con timelock de 10 bloques...\e[0m"
+
+alicetominer=`bitcoin-cli -rpcwallet=Miner getnewaddress`
+cambioalice=`bitcoin-cli -rpcwallet=Alice getnewaddress`
+
+echo -e "\e[33mDireccion nueva de Miner:\e[0m $alicetominer"
+echo -e "\e[33mDireccion cambio Alice:\e[0m $cambioalice"
+
+
+txidalice=$(bitcoin-cli -rpcwallet=Alice listunspent |jq -r '.[]| .txid')
+voutalice=$(bitcoin-cli -rpcwallet=Alice listunspent |jq -r '.[]| .vout')
+
+txhex=$(bitcoin-cli -named createrawtransaction inputs='''[ { "txid": "'$txidalice'", "vout": '${voutalice}', "sequence": '10' }  ]''' outputs='''[{ "'$alicetominer'": 10 } , {"'$cambioalice'": 39.99998}]''')
+
+txalicetominer=$(bitcoin-cli -rpcwallet=Alice signrawtransactionwithwallet $txhex | jq -r '.hex')
+
+echo -e "\e[33mtx de Alice a Miner:\e[0m $txalicetominer"
+
+####5.Informar en la salida del terminal qué sucede cuando intentas difundir la segunda transacción.
+
+txid=$(bitcoin-cli sendrawtransaction $txalicetominer)
+
+echo -e "\e[36mEsta transaccion no puede ser confirmada aun por que se establecio un timelock de 10 bloques por lo tanto hasta que no se minen almenos 10 bloques mas no se transmitira\e[0m"
+
+####Gastar desde el timelock relativo
+
+####1.Generar 10 bloques adicionales.
+
+echo -e "\e[36mMinando al menos 10 bloques mas...\e[0m"
+
+bitcoin-cli generatetoaddress 10 "$dirminer"
+
+####2.Difundir la segunda transacción. Confirmarla generando un bloque más.
+
+echo -e "\e[36mDifundiendo nuevamente la transaccion...\e[0m"
+
+txid=$(bitcoin-cli sendrawtransaction $txalicetominer)
+
+bitcoin-cli generatetoaddress 1 "$dirminer"
+
+saldofinalalice=`bitcoin-cli -rpcwallet=Alice getbalance`
+saldofinalminer=`bitcoin-cli -rpcwallet=Miner getbalance`
+
+echo -e "\e[33mSaldo Miner:\e[0m $saldofinalminer"
+echo -e "\e[33mSaldo Alice:\e[0m $saldofinalalice"
+
+echo -e ""
+echo -e "\e[35mFinalizando... :)\e[0m"
+echo -e ""
